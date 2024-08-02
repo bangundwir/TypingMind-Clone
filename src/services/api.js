@@ -31,3 +31,24 @@ export const createChatCompletion = async (messages, apiKey, modelId) => {
     throw new Error(`Failed to get chat completion: ${error.message}`);
   }
 };
+
+export const fetchApiUsage = async (apiKey) => {
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/auth/key', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch API usage data');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching API usage:', error);
+    throw error;
+  }
+};

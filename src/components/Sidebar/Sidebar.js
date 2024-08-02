@@ -1,7 +1,8 @@
-// components/Sidebar/Sidebar.js
+// src/components/Sidebar/Sidebar.js
 import React, { useState } from 'react';
 import Button from '../common/Button';
 import { X, ChevronRight, ChevronDown } from 'lucide-react';
+import ApiUsage from '../ApiUsage/ApiUsage';
 
 const Sidebar = ({ 
   chats, 
@@ -22,6 +23,7 @@ const Sidebar = ({
   const [editingChatId, setEditingChatId] = useState(null);
   const [editingTitle, setEditingTitle] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isApiUsageVisible, setIsApiUsageVisible] = useState(false);
 
   const handleRenameClick = (chat, event) => {
     event.stopPropagation();
@@ -35,6 +37,7 @@ const Sidebar = ({
   };
 
   const toggleSettings = () => setIsSettingsOpen(!isSettingsOpen);
+  const toggleApiUsageVisibility = () => setIsApiUsageVisible(!isApiUsageVisible);
 
   return (
     <div className="h-full flex flex-col p-4 overflow-hidden relative">
@@ -129,6 +132,14 @@ const Sidebar = ({
                 />
               )}
             </div>
+            <button
+              onClick={toggleApiUsageVisibility}
+              className="w-full flex justify-between items-center p-2 bg-gray-800 rounded text-white"
+            >
+              <span>API Usage</span>
+              {isApiUsageVisible ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+            </button>
+            {isApiUsageVisible && <ApiUsage apiKey={apiKey} />}
           </div>
         )}
         <div className="mt-4 text-sm">
