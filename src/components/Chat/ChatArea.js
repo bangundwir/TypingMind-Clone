@@ -1,9 +1,8 @@
+// components/Chat/ChatArea.js
 import React, { useRef, useEffect } from 'react';
 import MarkdownRenderer from '../common/MarkdownRenderer';
 import { MODEL_CONFIGS } from '../../utils/modelUtils';
 import { Copy, Check } from 'lucide-react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const ChatArea = ({ 
   messages, 
@@ -58,29 +57,6 @@ const ChatArea = ({
     );
   };
 
-  const CodeBlock = ({ node, inline, className, children, ...props }) => {
-    const match = /language-(\w+)/.exec(className || '');
-    return !inline && match ? (
-      <div className="relative">
-        <SyntaxHighlighter
-          style={materialDark}
-          language={match[1]}
-          PreTag="div"
-          {...props}
-        >
-          {String(children).replace(/\n$/, '')}
-        </SyntaxHighlighter>
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <CopyButton text={String(children)} />
-        </div>
-      </div>
-    ) : (
-      <code className={className} {...props}>
-        {children}
-      </code>
-    );
-  };
-
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 p-4 overflow-y-auto bg-white">
@@ -124,7 +100,23 @@ const ChatArea = ({
                   </div>
                   <MarkdownRenderer 
                     content={message.content} 
-                    CodeBlock={CodeBlock}
+                    CodeBlock={({ node, inline, className, children, ...props }) => {
+                      const match = /language-(\w+)/.exec(className || '');
+                      return !inline && match ? (
+                        <div className="relative">
+                          <pre {...props} className={`${className} relative`}>
+                            <code>{children}</code>
+                          </pre>
+                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <CopyButton text={children} />
+                          </div>
+                        </div>
+                      ) : (
+                        <code className={className} {...props}>
+                          {children}
+                        </code>
+                      );
+                    }}
                   />
                   <div className="text-xs text-gray-500 mt-2">
                     <span>Words: {message.wordCount}</span> | 
@@ -146,7 +138,23 @@ const ChatArea = ({
                         </div>
                         <MarkdownRenderer 
                           content={regen.content}
-                          CodeBlock={CodeBlock}
+                          CodeBlock={({ node, inline, className, children, ...props }) => {
+                            const match = /language-(\w+)/.exec(className || '');
+                            return !inline && match ? (
+                              <div className="relative">
+                                <pre {...props} className={`${className} relative`}>
+                                  <code>{children}</code>
+                                </pre>
+                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                <CopyButton text={children} />
+                                </div>
+                              </div>
+                            ) : (
+                              <code className={className} {...props}>
+                                {children}
+                              </code>
+                            );
+                          }}
                         />
                         <div className="text-xs text-gray-500 mt-2">
                           <span>Words: {regen.wordCount}</span> | 
@@ -167,7 +175,7 @@ const ChatArea = ({
             {previewMessage && (
               <div className="p-4 rounded-lg bg-yellow-100 max-w-full md:max-w-3/4">
                 <p className="font-semibold mb-2">Preview:</p>
-                <MarkdownRenderer content={previewMessage} CodeBlock={CodeBlock} />
+                <MarkdownRenderer content={previewMessage} />
               </div>
             )}
             <div ref={messagesEndRef} />

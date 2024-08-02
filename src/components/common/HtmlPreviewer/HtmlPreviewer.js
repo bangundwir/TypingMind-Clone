@@ -13,7 +13,7 @@ const HtmlPreviewer = ({ htmlContent, onClose }) => {
       iframeDoc.write(htmlContent);
       iframeDoc.close();
     }
-  }, [htmlContent]);
+  }, [htmlContent]); // Depend on htmlContent to update iframe in real-time
 
   const openInNewTab = () => {
     const newWindow = window.open();
