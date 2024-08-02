@@ -1,10 +1,10 @@
+// pages/Home.js
 import React, { useState, useEffect } from 'react';
 import { useChatContext } from '../contexts/ChatContext';
-import { useModelConfig } from '../hooks/useModelConfig';
 import Sidebar from '../components/Sidebar';
 import { ChatArea, InputArea } from '../components/Chat';
 import Button from '../components/common/Button';
-import { Menu, X, Copy, RefreshCw, Trash2, Plus, Calendar } from 'lucide-react';
+import { Menu, X, Copy, RefreshCw, Trash2, Plus, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Home = () => {
   const { 
@@ -16,6 +16,9 @@ const Home = () => {
     regeneratedResponses,
     clearContextTimestamp,
     previewMessage,
+    selectedModel,
+    models,
+    modelConfig,
     setApiKey,
     handleSendMessage,
     handleNewChat,
@@ -25,12 +28,13 @@ const Home = () => {
     handleRegenerate,
     handleClearContext,
     setPreviewMessage,
+    changeSelectedModel,
   } = useChatContext();
 
-  const { models, selectedModel, changeSelectedModel } = useModelConfig();
   const [isApiKeyVisible, setIsApiKeyVisible] = useState(true);
-  const [isSidebarVisible, setIsSidebarVisible] = useState(false);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [areActionButtonsVisible, setAreActionButtonsVisible] = useState(true);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
 
   const toggleApiKeyVisibility = () => setIsApiKeyVisible(!isApiKeyVisible);
   const toggleSidebar = () => setIsSidebarVisible(!isSidebarVisible);
@@ -47,7 +51,9 @@ const Home = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 768) {
+      const newIsDesktop = window.innerWidth >= 768;
+      setIsDesktop(newIsDesktop);
+      if (newIsDesktop) {
         setIsSidebarVisible(true);
       }
     };
@@ -57,18 +63,24 @@ const Home = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const currentChat = chats.find(chat => chat.id === currentChatId);
+  const totalTokens = currentChat ? currentChat.totalTokens : 0;
+  const totalCost = currentChat ? currentChat.totalCost : 0;
+
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
+      {!isDesktop && (
+        <div 
+          className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 ease-in-out ${
+            isSidebarVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
+          onClick={toggleSidebar}
+        ></div>
+      )}
       <div 
-        className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 ease-in-out ${
-          isSidebarVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        } md:hidden`}
-        onClick={toggleSidebar}
-      ></div>
-      <div 
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 text-white overflow-y-auto transition-all duration-300 ease-in-out transform ${
+        className={`fixed md:relative inset-y-0 left-0 z-50 w-64 bg-gray-900 text-white overflow-y-auto transition-all duration-300 ease-in-out transform ${
           isSidebarVisible ? 'translate-x-0' : '-translate-x-full'
-        } md:relative md:translate-x-0`}
+        } ${isDesktop ? 'md:translate-x-0' : ''}`}
       >
         <Sidebar 
           chats={chats} 
@@ -76,7 +88,7 @@ const Home = () => {
           onNewChat={handleNewChat} 
           onSelectChat={(chatId) => {
             handleSelectChat(chatId);
-            if (window.innerWidth < 768) {
+            if (!isDesktop) {
               setIsSidebarVisible(false);
             }
           }}
@@ -89,15 +101,21 @@ const Home = () => {
           models={models}
           selectedModel={selectedModel}
           onModelChange={changeSelectedModel}
-          onCloseSidebar={() => setIsSidebarVisible(false)}
+          onCloseSidebar={() => !isDesktop && setIsSidebarVisible(false)}
         />
       </div>
       <div className="flex flex-col flex-1 overflow-hidden">
         <div className="bg-white p-2 border-b flex justify-between items-center">
           <div className="flex space-x-2 items-center">
-            <Button onClick={toggleSidebar} className="text-xs px-2 py-1 rounded-full md:hidden">
-              <Menu size={20} />
-            </Button>
+            {isDesktop ? (
+              <Button onClick={toggleSidebar} className="text-xs px-2 py-1 rounded-full">
+                {isSidebarVisible ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+              </Button>
+            ) : (
+              <Button onClick={toggleSidebar} className="text-xs px-2 py-1 rounded-full">
+                <Menu size={20} />
+              </Button>
+            )}
             <Button onClick={toggleActionButtons} className="md:hidden text-xs px-2 py-1 rounded-full">
               {areActionButtonsVisible ? <X size={20} /> : <Menu size={20} />}
             </Button>
@@ -116,6 +134,8 @@ const Home = () => {
             selectedModel={selectedModel}
             models={models}
             previewMessage={previewMessage}
+            totalTokens={totalTokens}
+            totalCost={totalCost}
           />
         </div>
         {areActionButtonsVisible && (

@@ -1,3 +1,4 @@
+// components/Chat/InputArea.js
 import React, { useState, useEffect } from 'react';
 import MarkdownRenderer from '../common/MarkdownRenderer';
 import Button from '../common/Button';

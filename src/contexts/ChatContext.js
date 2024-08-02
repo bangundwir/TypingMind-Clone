@@ -1,7 +1,10 @@
+// contexts/ChatContext.js
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { createChatCompletion } from '../services/api';
 import { countWords, estimateTokens } from '../utils/textUtils';
+import { useModelConfig } from '../hooks/useModelConfig';
+import { calculateTokenCost, calculateImageCost } from '../utils/modelUtils';
 
 const ChatContext = createContext();
 
@@ -15,8 +18,9 @@ export const ChatProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [regeneratedResponses, setRegeneratedResponses] = useState({});
   const [clearContextTimestamp, setClearContextTimestamp] = useState(null);
-  const [selectedModel, setSelectedModel] = useLocalStorage('selectedModel', 'openai/gpt-4o-mini-2024-07-18');
   const [previewMessage, setPreviewMessage] = useState('');
+  
+  const { models, selectedModel, changeSelectedModel, modelConfig } = useModelConfig();
 
   useEffect(() => {
     if (chats.length > 0 && !currentChatId) {
@@ -41,12 +45,16 @@ export const ChatProvider = ({ children }) => {
       return;
     }
 
+    const inputTokens = estimateTokens(message);
+    const inputCost = calculateTokenCost(inputTokens, modelConfig.inputCost);
+
     const newMessage = { 
       role: 'user', 
       content: message, 
       timestamp: new Date().toISOString(),
       wordCount: countWords(message),
-      tokenCount: estimateTokens(message)
+      tokenCount: inputTokens,
+      cost: inputCost
     };
     const updatedMessages = [...messages, newMessage];
     setMessages(updatedMessages);
@@ -58,18 +66,31 @@ export const ChatProvider = ({ children }) => {
         : updatedMessages;
 
       const response = await createChatCompletion(relevantMessages, apiKey, selectedModel);
+      
+      const outputTokens = estimateTokens(response.content);
+      const outputCost = calculateTokenCost(outputTokens, modelConfig.outputCost);
+
       const assistantMessage = { 
         role: 'assistant', 
         content: response.content,
         timestamp: new Date().toISOString(),
         wordCount: countWords(response.content),
-        tokenCount: estimateTokens(response.content)
+        tokenCount: outputTokens,
+        cost: outputCost
       };
       const newMessages = [...updatedMessages, assistantMessage];
       setMessages(newMessages);
 
+      const totalTokens = inputTokens + outputTokens;
+      const totalCost = inputCost + outputCost;
+
       const updatedChats = chats.map(chat => 
-        chat.id === currentChatId ? { ...chat, messages: newMessages } : chat
+        chat.id === currentChatId ? { 
+          ...chat, 
+          messages: newMessages,
+          totalTokens: (chat.totalTokens || 0) + totalTokens,
+          totalCost: (chat.totalCost || 0) + totalCost
+        } : chat
       );
 
       if (updatedMessages.length === 1 && chats.find(chat => chat.id === currentChatId)?.title === 'New Chat') {
@@ -90,7 +111,7 @@ export const ChatProvider = ({ children }) => {
 
   const handleNewChat = () => {
     const newChatId = Date.now().toString();
-    const newChat = { id: newChatId, title: 'New Chat', messages: [] };
+    const newChat = { id: newChatId, title: 'New Chat', messages: [], totalTokens: 0, totalCost: 0 };
     const updatedChats = [newChat, ...chats];
     setChats(updatedChats);
     setCurrentChatId(newChatId);
@@ -132,17 +153,33 @@ export const ChatProvider = ({ children }) => {
             : messages;
 
           const response = await createChatCompletion([...relevantMessages.slice(0, -1), lastUserMessage], apiKey, selectedModel);
+          
+          const outputTokens = estimateTokens(response.content);
+          const outputCost = calculateTokenCost(outputTokens, modelConfig.outputCost);
+
           const regeneratedMessage = { 
             role: 'assistant', 
             content: response.content,
             timestamp: new Date().toISOString(),
             wordCount: countWords(response.content),
-            tokenCount: estimateTokens(response.content)
+            tokenCount: outputTokens,
+            cost: outputCost
           };
+
           setRegeneratedResponses(prev => ({
             ...prev,
             [messages.length - 1]: [...(prev[messages.length - 1] || []), regeneratedMessage]
           }));
+
+          const updatedChats = chats.map(chat => 
+            chat.id === currentChatId ? { 
+              ...chat, 
+              totalTokens: (chat.totalTokens || 0) + outputTokens,
+              totalCost: (chat.totalCost || 0) + outputCost
+            } : chat
+          );
+          setChats(updatedChats);
+
         } catch (error) {
           console.error('Error in handleRegenerate:', error);
           alert(`An error occurred while regenerating the message: ${error.message}`);
@@ -173,6 +210,7 @@ export const ChatProvider = ({ children }) => {
     clearContextTimestamp,
     selectedModel,
     previewMessage,
+    models,
     setApiKey,
     handleSendMessage,
     handleNewChat,
@@ -181,8 +219,9 @@ export const ChatProvider = ({ children }) => {
     handleRenameChat,
     handleRegenerate,
     handleClearContext,
-    setSelectedModel,
-    setPreviewMessage
+    changeSelectedModel,
+    setPreviewMessage,
+    modelConfig,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
