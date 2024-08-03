@@ -1,4 +1,5 @@
 // src/pages/Home.js
+
 import React, { useState, useEffect } from 'react';
 import { useChatContext } from '../contexts/ChatContext';
 import Sidebar from '../components/Sidebar';
@@ -22,7 +23,7 @@ const Home = () => {
     initialSystemInstruction,
     setApiKey,
     handleSendMessage,
-    handleNewChat,
+    handleNewChat, // Already imported
     handleSelectChat,
     handleDeleteChat,
     handleRenameChat,
@@ -96,7 +97,7 @@ const Home = () => {
         <Sidebar 
           folders={folders} 
           currentChatId={currentChatId} 
-          onNewChat={handleNewChat}
+          onNewChat={handleNewChat} // Already connected to Sidebar
           onSelectChat={(chatId) => {
             handleSelectChat(chatId);
             if (!isDesktop) {
@@ -168,7 +169,7 @@ const Home = () => {
               <Button onClick={handleClearContext} className="text-xs px-3 py-2 rounded-full flex items-center">
                 <Trash2 size={16} className="mr-1" /> Clear Context
               </Button>
-              <Button onClick={handleNewChat} className="text-xs px-3 py-2 rounded-full flex items-center">
+              <Button onClick={() => handleNewChat('default')} className="text-xs px-3 py-2 rounded-full flex items-center">
                 <Plus size={16} className="mr-1" /> New Chat
               </Button>
               <Button onClick={handleCopyChat} className="text-xs px-3 py-2 rounded-full flex items-center">
