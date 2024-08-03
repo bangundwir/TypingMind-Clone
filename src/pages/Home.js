@@ -8,7 +8,7 @@ import { Menu, X, Copy, RefreshCw, Trash2, Plus, Calendar, ChevronLeft, ChevronR
 
 const Home = () => {
   const { 
-    chats, 
+    folders, 
     currentChatId, 
     messages, 
     apiKey, 
@@ -19,9 +19,10 @@ const Home = () => {
     selectedModel,
     models,
     modelConfig,
+    initialSystemInstruction,
     setApiKey,
     handleSendMessage,
-    handleNewChat,
+    handleNewChat,  // Ensure handleNewChat is defined here
     handleSelectChat,
     handleDeleteChat,
     handleRenameChat,
@@ -29,6 +30,14 @@ const Home = () => {
     handleClearContext,
     setPreviewMessage,
     changeSelectedModel,
+    setInitialSystemInstruction,
+    savedPrompts,
+    setSavedPrompts,
+    handleCreateFolder,
+    handleRenameFolder,
+    handleDeleteFolder,
+    exportData,
+    importData,
   } = useChatContext();
 
   const [isApiKeyVisible, setIsApiKeyVisible] = useState(true);
@@ -63,7 +72,8 @@ const Home = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const currentChat = chats.find(chat => chat.id === currentChatId);
+  const defaultFolder = folders?.find(folder => folder.id === 'default') || { chats: [] };
+  const currentChat = folders?.flatMap(folder => folder.chats).find(chat => chat.id === currentChatId) || defaultFolder.chats[0];
   const totalTokens = currentChat ? currentChat.totalTokens : 0;
   const totalCost = currentChat ? currentChat.totalCost : 0;
 
@@ -83,9 +93,9 @@ const Home = () => {
         } ${isDesktop ? 'md:translate-x-0' : ''}`}
       >
         <Sidebar 
-          chats={chats} 
+          folders={folders} 
           currentChatId={currentChatId} 
-          onNewChat={handleNewChat} 
+          onNewChat={handleNewChat}  // Pass handleNewChat to Sidebar
           onSelectChat={(chatId) => {
             handleSelectChat(chatId);
             if (!isDesktop) {
@@ -102,6 +112,15 @@ const Home = () => {
           selectedModel={selectedModel}
           onModelChange={changeSelectedModel}
           onCloseSidebar={() => !isDesktop && setIsSidebarVisible(false)}
+          initialSystemInstruction={initialSystemInstruction}
+          setInitialSystemInstruction={setInitialSystemInstruction}
+          savedPrompts={savedPrompts}
+          setSavedPrompts={setSavedPrompts}
+          onCreateFolder={handleCreateFolder}
+          onRenameFolder={handleRenameFolder}
+          onDeleteFolder={handleDeleteFolder}
+          exportData={exportData}
+          importData={importData}
         />
       </div>
       <div className="flex flex-col flex-1 overflow-hidden">

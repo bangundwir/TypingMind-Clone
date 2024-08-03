@@ -11,7 +11,7 @@ const ChatContext = createContext();
 export const useChatContext = () => useContext(ChatContext);
 
 export const ChatProvider = ({ children }) => {
-  const [chats, setChats] = useLocalStorage('chats', []);
+  const [folders, setFolders] = useLocalStorage('folders', [{ id: 'default', name: 'Default', chats: [] }]);
   const [currentChatId, setCurrentChatId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [apiKey, setApiKey] = useLocalStorage('apiKey', '');
@@ -19,25 +19,30 @@ export const ChatProvider = ({ children }) => {
   const [regeneratedResponses, setRegeneratedResponses] = useState({});
   const [clearContextTimestamp, setClearContextTimestamp] = useState(null);
   const [previewMessage, setPreviewMessage] = useState('');
+  const [initialSystemInstruction, setInitialSystemInstruction] = useLocalStorage('initialSystemInstruction', '');
+  const [savedPrompts, setSavedPrompts] = useLocalStorage('savedPrompts', []);
   
   const { models, selectedModel, changeSelectedModel, modelConfig } = useModelConfig();
 
   useEffect(() => {
-    if (chats.length > 0 && !currentChatId) {
-      setCurrentChatId(chats[0].id);
+    if (folders.length > 0 && !currentChatId) {
+      const defaultFolder = folders.find(folder => folder.id === 'default');
+      if (defaultFolder.chats.length > 0) {
+        setCurrentChatId(defaultFolder.chats[0].id);
+      }
     }
-  }, [chats, currentChatId]);
+  }, [folders, currentChatId]);
 
   useEffect(() => {
     if (currentChatId) {
-      const currentChat = chats.find(chat => chat.id === currentChatId);
+      const currentChat = folders.flatMap(folder => folder.chats).find(chat => chat.id === currentChatId);
       if (currentChat) {
         setMessages(currentChat.messages);
         setRegeneratedResponses({});
         setClearContextTimestamp(currentChat.clearContextTimestamp || null);
       }
     }
-  }, [currentChatId, chats]);
+  }, [currentChatId, folders]);
 
   const handleSendMessage = async (message) => {
     if (!apiKey) {
@@ -65,7 +70,11 @@ export const ChatProvider = ({ children }) => {
         ? updatedMessages.filter(msg => new Date(msg.timestamp) > new Date(clearContextTimestamp))
         : updatedMessages;
 
-      const response = await createChatCompletion(relevantMessages, apiKey, selectedModel);
+      const messagesWithSystemInstruction = initialSystemInstruction
+        ? [{ role: 'system', content: initialSystemInstruction }, ...relevantMessages]
+        : relevantMessages;
+
+      const response = await createChatCompletion(messagesWithSystemInstruction, apiKey, selectedModel);
       
       const outputTokens = estimateTokens(response.content);
       const outputCost = calculateTokenCost(outputTokens, modelConfig.outputCost);
@@ -84,23 +93,26 @@ export const ChatProvider = ({ children }) => {
       const totalTokens = inputTokens + outputTokens;
       const totalCost = inputCost + outputCost;
 
-      const updatedChats = chats.map(chat => 
-        chat.id === currentChatId ? { 
-          ...chat, 
-          messages: newMessages,
-          totalTokens: (chat.totalTokens || 0) + totalTokens,
-          totalCost: (chat.totalCost || 0) + totalCost
-        } : chat
-      );
+      const updatedFolders = folders.map(folder => ({
+        ...folder,
+        chats: folder.chats.map(chat => 
+          chat.id === currentChatId ? { 
+            ...chat, 
+            messages: newMessages,
+            totalTokens: (chat.totalTokens || 0) + totalTokens,
+            totalCost: (chat.totalCost || 0) + totalCost
+          } : chat
+        )
+      }));
 
-      if (updatedMessages.length === 1 && chats.find(chat => chat.id === currentChatId)?.title === 'New Chat') {
-        const chatToUpdate = updatedChats.find(chat => chat.id === currentChatId);
+      if (updatedMessages.length === 1 && folders.flatMap(folder => folder.chats).find(chat => chat.id === currentChatId)?.title === 'New Chat') {
+        const chatToUpdate = updatedFolders.flatMap(folder => folder.chats).find(chat => chat.id === currentChatId);
         if (chatToUpdate) {
           chatToUpdate.title = response.content.split('\n')[0].slice(0, 30) + '...';
         }
       }
 
-      setChats(updatedChats);
+      setFolders(updatedFolders);
     } catch (error) {
       console.error('Error in handleSendMessage:', error);
       alert(`An error occurred while sending the message: ${error.message}`);
@@ -109,11 +121,13 @@ export const ChatProvider = ({ children }) => {
     }
   };
 
-  const handleNewChat = () => {
+  const handleNewChat = (folderId) => {
     const newChatId = Date.now().toString();
     const newChat = { id: newChatId, title: 'New Chat', messages: [], totalTokens: 0, totalCost: 0 };
-    const updatedChats = [newChat, ...chats];
-    setChats(updatedChats);
+    const updatedFolders = folders.map(folder =>
+      folder.id === folderId ? { ...folder, chats: [newChat, ...folder.chats] } : folder
+    );
+    setFolders(updatedFolders);
     setCurrentChatId(newChatId);
     setMessages([]);
     setRegeneratedResponses({});
@@ -125,21 +139,28 @@ export const ChatProvider = ({ children }) => {
   };
 
   const handleDeleteChat = (chatId) => {
-    const updatedChats = chats.filter(chat => chat.id !== chatId);
-    setChats(updatedChats);
+    const updatedFolders = folders.map(folder => ({
+      ...folder,
+      chats: folder.chats.filter(chat => chat.id !== chatId)
+    }));
+    setFolders(updatedFolders);
+    const defaultFolder = updatedFolders.find(folder => folder.id === 'default');
     if (chatId === currentChatId) {
-      setCurrentChatId(updatedChats[0]?.id || null);
-      setMessages(updatedChats[0]?.messages || []);
+      setCurrentChatId(defaultFolder?.chats[0]?.id || null);
+      setMessages(defaultFolder?.chats[0]?.messages || []);
       setRegeneratedResponses({});
-      setClearContextTimestamp(updatedChats[0]?.clearContextTimestamp || null);
+      setClearContextTimestamp(defaultFolder?.clearContextTimestamp || null);
     }
   };
 
   const handleRenameChat = (chatId, newTitle) => {
-    const updatedChats = chats.map(chat => 
-      chat.id === chatId ? { ...chat, title: newTitle } : chat
-    );
-    setChats(updatedChats);
+    const updatedFolders = folders.map(folder => ({
+      ...folder,
+      chats: folder.chats.map(chat => 
+        chat.id === chatId ? { ...chat, title: newTitle } : chat
+      )
+    }));
+    setFolders(updatedFolders);
   };
 
   const handleRegenerate = async () => {
@@ -152,7 +173,11 @@ export const ChatProvider = ({ children }) => {
             ? messages.filter(msg => new Date(msg.timestamp) > new Date(clearContextTimestamp))
             : messages;
 
-          const response = await createChatCompletion([...relevantMessages.slice(0, -1), lastUserMessage], apiKey, selectedModel);
+          const messagesWithSystemInstruction = initialSystemInstruction
+            ? [{ role: 'system', content: initialSystemInstruction }, ...relevantMessages.slice(0, -1), lastUserMessage]
+            : [...relevantMessages.slice(0, -1), lastUserMessage];
+
+          const response = await createChatCompletion(messagesWithSystemInstruction, apiKey, selectedModel);
           
           const outputTokens = estimateTokens(response.content);
           const outputCost = calculateTokenCost(outputTokens, modelConfig.outputCost);
@@ -171,14 +196,17 @@ export const ChatProvider = ({ children }) => {
             [messages.length - 1]: [...(prev[messages.length - 1] || []), regeneratedMessage]
           }));
 
-          const updatedChats = chats.map(chat => 
-            chat.id === currentChatId ? { 
-              ...chat, 
-              totalTokens: (chat.totalTokens || 0) + outputTokens,
-              totalCost: (chat.totalCost || 0) + outputCost
-            } : chat
-          );
-          setChats(updatedChats);
+          const updatedFolders = folders.map(folder => ({
+            ...folder,
+            chats: folder.chats.map(chat => 
+              chat.id === currentChatId ? { 
+                ...chat, 
+                totalTokens: (chat.totalTokens || 0) + outputTokens,
+                totalCost: (chat.totalCost || 0) + outputCost
+              } : chat
+            )
+          }));
+          setFolders(updatedFolders);
 
         } catch (error) {
           console.error('Error in handleRegenerate:', error);
@@ -194,14 +222,52 @@ export const ChatProvider = ({ children }) => {
     const timestamp = new Date().toISOString();
     setClearContextTimestamp(timestamp);
     
-    const updatedChats = chats.map(chat => 
-      chat.id === currentChatId ? { ...chat, clearContextTimestamp: timestamp } : chat
+    const updatedFolders = folders.map(folder => ({
+      ...folder,
+      chats: folder.chats.map(chat => 
+        chat.id === currentChatId ? { ...chat, clearContextTimestamp: timestamp } : chat
+      )
+    }));
+    setFolders(updatedFolders);
+  };
+
+  const handleCreateFolder = (folderName) => {
+    const newFolder = { id: Date.now().toString(), name: folderName, chats: [] };
+    setFolders([...folders, newFolder]);
+  };
+
+  const handleRenameFolder = (folderId, newName) => {
+    const updatedFolders = folders.map(folder => 
+      folder.id === folderId ? { ...folder, name: newName } : folder
     );
-    setChats(updatedChats);
+    setFolders(updatedFolders);
+  };
+
+  const handleDeleteFolder = (folderId) => {
+    const updatedFolders = folders.filter(folder => folder.id !== folderId);
+    setFolders(updatedFolders);
+  };
+
+  const exportData = () => {
+    const data = { folders, apiKey, initialSystemInstruction, savedPrompts };
+    const jsonString = JSON.stringify(data);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'chat_data.json';
+    link.click();
+  };
+
+  const importData = (importedData) => {
+    const { folders, apiKey, initialSystemInstruction, savedPrompts } = importedData;
+    setFolders(folders);
+    setApiKey(apiKey);
+    setInitialSystemInstruction(initialSystemInstruction);
+    setSavedPrompts(savedPrompts);
   };
 
   const value = {
-    chats,
+    folders,
     currentChatId,
     messages,
     apiKey,
@@ -211,6 +277,7 @@ export const ChatProvider = ({ children }) => {
     selectedModel,
     previewMessage,
     models,
+    initialSystemInstruction,
     setApiKey,
     handleSendMessage,
     handleNewChat,
@@ -221,6 +288,14 @@ export const ChatProvider = ({ children }) => {
     handleClearContext,
     changeSelectedModel,
     setPreviewMessage,
+    setInitialSystemInstruction,
+    savedPrompts,
+    setSavedPrompts,
+    handleCreateFolder,
+    handleRenameFolder,
+    handleDeleteFolder,
+    exportData,
+    importData,
     modelConfig,
   };
 
