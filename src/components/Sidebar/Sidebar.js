@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Button from '../common/Button';
 import Modal from '../common/Modal';
-import { X, ChevronRight, ChevronDown, Eye, EyeOff, Save, Plus, Trash2, Edit3 } from 'lucide-react';
+import { X, ChevronRight, ChevronDown, Eye, EyeOff, Save, Plus, Trash2, Edit3, Download, Upload } from 'lucide-react';
 import ApiUsage from '../ApiUsage/ApiUsage';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
@@ -48,6 +48,8 @@ const Sidebar = ({
   const [folderModalMode, setFolderModalMode] = useState('add');
   const [editingFolderId, setEditingFolderId] = useState(null);
   const [expandedFolders, setExpandedFolders] = useState({});
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importedData, setImportedData] = useState(null);
 
   const handleRenameClick = (chat, event) => {
     event.stopPropagation();
@@ -149,10 +151,19 @@ const Sidebar = ({
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        const importedData = JSON.parse(e.target.result);
-        importData(importedData);
+        const data = JSON.parse(e.target.result);
+        setImportedData(data);
+        setIsImportModalOpen(true);
       };
       reader.readAsText(file);
+    }
+  };
+
+  const confirmImport = () => {
+    if (importedData) {
+      importData(importedData);
+      setIsImportModalOpen(false);
+      setImportedData(null);
     }
   };
 
@@ -381,6 +392,34 @@ const Sidebar = ({
           <p className="text-gray-400">© 2024 YourCompany</p>
         </div>
       </div>
+      <div className="mt-4">
+        <Button onClick={handleExport} className="w-full mb-2 flex items-center justify-center">
+          <Download size={16} className="mr-1" /> Export Data
+        </Button>
+        <label className="w-full flex items-center justify-center cursor-pointer mb-2 bg-gray-800 text-white p-2 rounded">
+          <Upload size={16} className="mr-1" /> Import Data
+          <input
+            type="file"
+            onChange={handleImport}
+            accept=".json"
+            className="hidden"
+          />
+        </label>
+      </div>
+      <Modal
+        title="Confirm Import"
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+      >
+        <div className="space-y-4">
+          <p>Are you sure you want to import this data? This will overwrite existing data.</p>
+          <div className="flex justify-end">
+            <Button onClick={confirmImport} className="text-xs px-2 py-1">
+              Confirm
+            </Button>
+          </div>
+        </div>
+      </Modal>
       <Modal 
         title={modalMode === 'add' ? 'Add New Prompt' : 'Edit Prompt'}
         isOpen={isModalOpen}
@@ -446,15 +485,6 @@ const Sidebar = ({
           </div>
         </div>
       </Modal>
-      <div className="mt-4">
-        <Button onClick={handleExport} className="w-full mb-2">Export Data</Button>
-        <input
-          type="file"
-          onChange={handleImport}
-          accept=".json"
-          className="w-full bg-gray-800 text-white p-2 rounded"
-        />
-      </div>
     </div>
   );
 };
