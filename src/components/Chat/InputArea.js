@@ -1,10 +1,9 @@
-// components/Chat/InputArea.js
+// src/components/Chat/InputArea.js
 import React, { useState, useEffect } from 'react';
-import MarkdownRenderer from '../common/MarkdownRenderer';
 import Button from '../common/Button';
 import { Send, CornerDownLeft, ToggleLeft, ToggleRight } from 'lucide-react';
 
-const InputArea = ({ onSendMessage, onPreviewChange }) => {
+const InputArea = ({ onSendMessage }) => {
   const [message, setMessage] = useState('');
   const [sendOnEnter, setSendOnEnter] = useState(false);
 
@@ -13,16 +12,11 @@ const InputArea = ({ onSendMessage, onPreviewChange }) => {
     if (message.trim()) {
       onSendMessage(message);
       setMessage('');
-      onPreviewChange('');
     }
   };
 
   const handleChange = (e) => {
-    const newMessage = e.target.value;
-    setMessage(newMessage);
-    if (typeof onPreviewChange === 'function') {
-      onPreviewChange(newMessage);
-    }
+    setMessage(e.target.value);
   };
 
   const handleKeyPress = (e) => {
@@ -56,12 +50,9 @@ const InputArea = ({ onSendMessage, onPreviewChange }) => {
             onChange={handleChange}
             onKeyPress={handleKeyPress}
             placeholder="Type your message..."
-            className="w-full p-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[100px]"
+            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[100px]"
             rows="4"
           />
-          <div className="absolute inset-0 pointer-events-none p-3 overflow-auto">
-            <MarkdownRenderer content={message} />
-          </div>
           <button
             type="submit"
             className="absolute bottom-3 right-3 bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition duration-200"
