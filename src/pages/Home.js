@@ -1,4 +1,4 @@
-// pages/Home.js
+// src/pages/Home.js
 import React, { useState, useEffect } from 'react';
 import { useChatContext } from '../contexts/ChatContext';
 import Sidebar from '../components/Sidebar';
@@ -22,7 +22,7 @@ const Home = () => {
     initialSystemInstruction,
     setApiKey,
     handleSendMessage,
-    handleNewChat,  // Ensure handleNewChat is defined here
+    handleNewChat,
     handleSelectChat,
     handleDeleteChat,
     handleRenameChat,
@@ -38,6 +38,7 @@ const Home = () => {
     handleDeleteFolder,
     exportData,
     importData,
+    onMoveChatToFolder, // Function imported from ChatContext
   } = useChatContext();
 
   const [isApiKeyVisible, setIsApiKeyVisible] = useState(true);
@@ -95,7 +96,7 @@ const Home = () => {
         <Sidebar 
           folders={folders} 
           currentChatId={currentChatId} 
-          onNewChat={handleNewChat}  // Pass handleNewChat to Sidebar
+          onNewChat={handleNewChat}
           onSelectChat={(chatId) => {
             handleSelectChat(chatId);
             if (!isDesktop) {
@@ -121,6 +122,7 @@ const Home = () => {
           onDeleteFolder={handleDeleteFolder}
           exportData={exportData}
           importData={importData}
+          onMoveChatToFolder={onMoveChatToFolder} // Passed as a prop
         />
       </div>
       <div className="flex flex-col flex-1 overflow-hidden">

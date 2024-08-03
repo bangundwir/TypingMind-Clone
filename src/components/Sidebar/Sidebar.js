@@ -30,7 +30,7 @@ const Sidebar = ({
   onDeleteFolder,
   exportData,
   importData,
-  onMoveChatToFolder,
+  onMoveChatToFolder, // Function passed as a prop
 }) => {
   const [editingChatId, setEditingChatId] = useState(null);
   const [editingTitle, setEditingTitle] = useState('');
@@ -137,13 +137,7 @@ const Sidebar = ({
   };
 
   const handleExport = () => {
-    const data = { folders, apiKey, initialSystemInstruction, savedPrompts };
-    const jsonString = JSON.stringify(data);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'chat_data.json';
-    link.click();
+    exportData();
   };
 
   const handleImport = (event) => {
@@ -213,8 +207,12 @@ const Sidebar = ({
                   >
                     <span>{folder.name}</span>
                     <div className="flex space-x-2">
-                      <button onClick={() => handleEditFolder(folder)} className="text-gray-400 hover:text-white transition-colors duration-200">✏️</button>
-                      <button onClick={() => handleDeleteFolder(folder.id)} className="text-gray-400 hover:text-white transition-colors duration-200">🗑️</button>
+                      {folder.id !== 'default' && (
+                        <>
+                          <button onClick={() => handleEditFolder(folder)} className="text-gray-400 hover:text-white transition-colors duration-200">✏️</button>
+                          <button onClick={() => handleDeleteFolder(folder.id)} className="text-gray-400 hover:text-white transition-colors duration-200">🗑️</button>
+                        </>
+                      )}
                       <button onClick={() => handleNewChatInFolder(folder.id)} className="text-gray-400 hover:text-white transition-colors duration-200">➕</button>
                       <button className="text-gray-400 hover:text-white transition-colors duration-200">
                         {expandedFolders[folder.id] ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
@@ -225,7 +223,7 @@ const Sidebar = ({
                     <Droppable droppableId={folder.id} type="chat">
                       {(provided) => (
                         <div className="ml-4 space-y-2" {...provided.droppableProps} ref={provided.innerRef}>
-                          {folder.chats.map((chat, index) => (
+                          {(folder.chats || []).map((chat, index) => (
                             <Draggable key={chat.id} draggableId={chat.id} index={index}>
                               {(provided) => (
                                 <div

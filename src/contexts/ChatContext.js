@@ -1,4 +1,4 @@
-// contexts/ChatContext.js
+// src/contexts/ChatContext.js
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { createChatCompletion } from '../services/api';
@@ -21,7 +21,7 @@ export const ChatProvider = ({ children }) => {
   const [previewMessage, setPreviewMessage] = useState('');
   const [initialSystemInstruction, setInitialSystemInstruction] = useLocalStorage('initialSystemInstruction', '');
   const [savedPrompts, setSavedPrompts] = useLocalStorage('savedPrompts', []);
-  
+
   const { models, selectedModel, changeSelectedModel, modelConfig } = useModelConfig();
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export const ChatProvider = ({ children }) => {
         : relevantMessages;
 
       const response = await createChatCompletion(messagesWithSystemInstruction, apiKey, selectedModel);
-      
+
       const outputTokens = estimateTokens(response.content);
       const outputCost = calculateTokenCost(outputTokens, modelConfig.outputCost);
 
@@ -178,7 +178,7 @@ export const ChatProvider = ({ children }) => {
             : [...relevantMessages.slice(0, -1), lastUserMessage];
 
           const response = await createChatCompletion(messagesWithSystemInstruction, apiKey, selectedModel);
-          
+
           const outputTokens = estimateTokens(response.content);
           const outputCost = calculateTokenCost(outputTokens, modelConfig.outputCost);
 
@@ -221,7 +221,7 @@ export const ChatProvider = ({ children }) => {
   const handleClearContext = () => {
     const timestamp = new Date().toISOString();
     setClearContextTimestamp(timestamp);
-    
+
     const updatedFolders = folders.map(folder => ({
       ...folder,
       chats: folder.chats.map(chat => 
@@ -244,8 +244,36 @@ export const ChatProvider = ({ children }) => {
   };
 
   const handleDeleteFolder = (folderId) => {
-    const updatedFolders = folders.filter(folder => folder.id !== folderId);
-    setFolders(updatedFolders);
+    if (folderId === 'default') {
+      alert('The default folder cannot be deleted.');
+      return;
+    }
+    setFolders(folders.filter(folder => folder.id !== folderId));
+  };
+
+  const onMoveChatToFolder = (chatId, destinationFolderId) => {
+    setFolders((prevFolders) => {
+      let movedChat;
+      const updatedFolders = prevFolders.map(folder => {
+        const updatedChats = folder.chats.filter(chat => {
+          if (chat.id === chatId) {
+            movedChat = chat;
+            return false;
+          }
+          return true;
+        });
+        return { ...folder, chats: updatedChats };
+      });
+
+      if (movedChat) {
+        const destinationFolder = updatedFolders.find(folder => folder.id === destinationFolderId);
+        if (destinationFolder) {
+          destinationFolder.chats = [...destinationFolder.chats, movedChat];
+        }
+      }
+
+      return updatedFolders;
+    });
   };
 
   const exportData = () => {
@@ -296,6 +324,7 @@ export const ChatProvider = ({ children }) => {
     handleDeleteFolder,
     exportData,
     importData,
+    onMoveChatToFolder,
     modelConfig,
   };
 
