@@ -1,4 +1,3 @@
-// src/components/Sidebar/FolderList.js
 import React, { useState } from 'react';
 import { Droppable } from 'react-beautiful-dnd';
 import ChatList from './ChatList';
@@ -14,6 +13,8 @@ const FolderList = ({
   onRenameFolder,
   onDeleteFolder,
   onNewChat,
+  currentFolderId,
+  setCurrentFolderId
 }) => {
   const [expandedFolders, setExpandedFolders] = useState({});
   const [editingChatId, setEditingChatId] = useState(null);
@@ -24,6 +25,7 @@ const FolderList = ({
       ...prevState,
       [folderId]: !prevState[folderId],
     }));
+    setCurrentFolderId(folderId);  // Set the current folder ID when toggling expansion
   };
 
   const handleNewChatInFolder = (folderId) => {

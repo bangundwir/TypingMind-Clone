@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+// Sidebar/Templates.js
+import React, { useState, useEffect } from 'react';
 import Button from '../common/Button';
 import Modal from '../common/Modal';
-import { ChevronRight, ChevronDown, Edit3, Trash2, Plus } from 'lucide-react';
+import { ChevronRight, ChevronDown, Edit3, Trash2, Plus, Search, X } from 'lucide-react';
 
 const Templates = ({ savedPrompts, setSavedPrompts, initialSystemInstruction, setInitialSystemInstruction }) => {
   const [isPromptDropdownOpen, setIsPromptDropdownOpen] = useState(false);
@@ -10,8 +11,19 @@ const Templates = ({ savedPrompts, setSavedPrompts, initialSystemInstruction, se
   const [currentPrompt, setCurrentPrompt] = useState('');
   const [newTemplateName, setNewTemplateName] = useState('');
   const [activePromptId, setActivePromptId] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const togglePromptDropdown = () => setIsPromptDropdownOpen(!isPromptDropdownOpen);
+  const closePromptDropdown = () => setIsPromptDropdownOpen(false);
 
   const handleSavePrompt = () => {
     if (currentPrompt.trim() !== '' && newTemplateName.trim() !== '') {
@@ -62,6 +74,10 @@ const Templates = ({ savedPrompts, setSavedPrompts, initialSystemInstruction, se
     }
   };
 
+  const filteredPrompts = savedPrompts.filter(template => 
+    template.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="mt-4">
       <Button onClick={handleCreateTemplate} className="w-full text-xs px-2 py-1 flex items-center justify-center mb-2">
@@ -73,35 +89,52 @@ const Templates = ({ savedPrompts, setSavedPrompts, initialSystemInstruction, se
           {isPromptDropdownOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </Button>
         {isPromptDropdownOpen && (
-          <div className="absolute z-10 w-full bg-gray-800 rounded mt-2 max-h-60 overflow-y-auto">
-            {savedPrompts.map((template) => (
-              <div
-                key={template.id}
-                className={`flex items-center justify-between p-2 rounded cursor-pointer transition-colors duration-200 ${
-                  template.id === activePromptId ? 'bg-gray-600' : 'hover:bg-gray-700'
-                }`}
-                onClick={() => handleSelectTemplate(template)}
-              >
-                <span className="flex-grow truncate">{template.name}</span>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditTemplate(template);
-                    }}
-                    className="text-gray-400 hover:text-white transition-colors duration-200"
-                  >
-                    <Edit3 size={14} />
-                  </button>
-                  <button
-                    onClick={(e) => handleDeleteTemplate(template.id, e)}
-                    className="text-gray-400 hover:text-white transition-colors duration-200"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+          <div className="fixed inset-0 z-10 flex flex-col items-center justify-start p-4 bg-gray-900 bg-opacity-75">
+            <div className="relative w-full max-w-md bg-gray-800 rounded shadow-lg max-h-full overflow-y-auto">
+              <div className="flex justify-between items-center p-4">
+                <div className="relative w-full">
+                  <Search size={16} className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search templates..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-8 pr-2 py-1 bg-gray-700 text-white rounded"
+                  />
                 </div>
+                <button onClick={closePromptDropdown} className="text-gray-400 hover:text-white ml-4">
+                  <X size={16} />
+                </button>
               </div>
-            ))}
+              {filteredPrompts.map((template) => (
+                <div
+                  key={template.id}
+                  className={`flex items-center justify-between p-2 rounded cursor-pointer transition-colors duration-200 ${
+                    template.id === activePromptId ? 'bg-gray-600' : 'hover:bg-gray-700'
+                  }`}
+                  onClick={() => handleSelectTemplate(template)}
+                >
+                  <span className="flex-grow truncate">{template.name}</span>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditTemplate(template);
+                      }}
+                      className="text-gray-400 hover:text-white transition-colors duration-200"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                    <button
+                      onClick={(e) => handleDeleteTemplate(template.id, e)}
+                      className="text-gray-400 hover:text-white transition-colors duration-200"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

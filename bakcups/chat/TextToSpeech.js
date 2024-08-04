@@ -1,4 +1,3 @@
-// Chat/Settings.js
 import React, { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, X } from 'lucide-react';
 
@@ -12,25 +11,25 @@ const Settings = () => {
     const savedVoice = localStorage.getItem('selectedVoice');
     const savedRate = localStorage.getItem('speechRate');
 
-    const loadVoices = () => {
+    const populateVoices = () => {
       const availableVoices = speechSynthesis.getVoices();
       setVoices(availableVoices.filter(voice => voice.lang.includes('en') || voice.lang.includes('id')));
       if (availableVoices.length > 0) {
         const defaultVoice = savedVoice || availableVoices[0].name;
         setSelectedVoice(defaultVoice);
-        localStorage.setItem('selectedVoice', defaultVoice);
       }
     };
 
-    if (speechSynthesis.onvoiceschanged !== undefined) {
-      speechSynthesis.onvoiceschanged = loadVoices;
-    }
-
-    loadVoices(); // Load voices immediately in case they're already available
+    speechSynthesis.addEventListener('voiceschanged', populateVoices);
+    populateVoices();
 
     if (savedRate) {
       setSpeechRate(parseFloat(savedRate));
     }
+
+    return () => {
+      speechSynthesis.removeEventListener('voiceschanged', populateVoices);
+    };
   }, []);
 
   useEffect(() => {

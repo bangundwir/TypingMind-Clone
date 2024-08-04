@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import MarkdownRenderer from '../common/MarkdownRenderer';
 import { MODEL_CONFIGS } from '../../utils/modelUtils';
-import { Copy, Check, ChevronDown, ChevronUp, User, Bot, MessageSquare, Zap, Hash, Type } from 'lucide-react';
+import { Copy, Check, ChevronDown, ChevronUp, User, Bot, MessageSquare, Zap, Hash, Type, Volume2, VolumeX, Settings } from 'lucide-react';
 
 const ChatArea = ({ 
   messages, 
@@ -16,12 +16,40 @@ const ChatArea = ({
 }) => {
   const messagesEndRef = useRef(null);
   const [isMetricsExpanded, setIsMetricsExpanded] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voices, setVoices] = useState([]);
+  const [selectedVoice, setSelectedVoice] = useState('');
+  const [speechRate, setSpeechRate] = useState(1);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(scrollToBottom, [messages, regeneratedResponses, clearContextTimestamp, previewMessage]);
+
+  useEffect(() => {
+    const savedVoice = localStorage.getItem('selectedVoice');
+    const populateVoices = () => {
+      const availableVoices = speechSynthesis.getVoices();
+      setVoices(availableVoices.filter(voice => voice.lang.includes('en') || voice.lang.includes('id')));
+      if (availableVoices.length > 0) {
+        const defaultVoice = savedVoice || availableVoices[0].name;
+        setSelectedVoice(defaultVoice);
+      }
+    };
+
+    speechSynthesis.addEventListener('voiceschanged', populateVoices);
+    populateVoices();
+
+    return () => {
+      speechSynthesis.removeEventListener('voiceschanged', populateVoices);
+    };
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('selectedVoice', selectedVoice);
+  }, [selectedVoice]);
 
   const modelConfig = MODEL_CONFIGS[selectedModel];
 
@@ -33,6 +61,27 @@ const ChatArea = ({
       console.error('Failed to copy: ', err);
       return false;
     }
+  };
+
+  const speak = (text) => {
+    if (speechSynthesis.speaking) {
+      speechSynthesis.cancel();
+      setIsSpeaking(false);
+    } else {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.voice = voices.find(voice => voice.name === selectedVoice);
+      utterance.rate = speechRate;
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+
+      setIsSpeaking(true);
+      speechSynthesis.speak(utterance);
+    }
+  };
+
+  const stopSpeaking = () => {
+    speechSynthesis.cancel();
+    setIsSpeaking(false);
   };
 
   const CopyButton = ({ text }) => {
@@ -57,6 +106,16 @@ const ChatArea = ({
     );
   };
 
+  const SpeakButton = ({ text }) => (
+    <button
+      onClick={() => speak(text)}
+      className="text-gray-500 hover:text-gray-700 transition-colors duration-200 p-1 rounded-full hover:bg-gray-200"
+      title={isSpeaking ? "Stop" : "Speak"}
+    >
+      {isSpeaking ? <VolumeX size={16} /> : <Volume2 size={16} />}
+    </button>
+  );
+
   return (
     <div className="flex flex-col h-full overflow-hidden bg-gradient-to-b from-gray-50 to-gray-100">
       <div className="flex-1 p-2 sm:p-4 overflow-y-auto">
@@ -67,13 +126,22 @@ const ChatArea = ({
                 <span className="text-xl sm:text-2xl font-bold text-gray-800">{modelConfig.name}</span>
                 <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-semibold">Available</span>
               </div>
-              <button 
-                onClick={() => setIsMetricsExpanded(!isMetricsExpanded)}
-                className="text-gray-500 hover:text-gray-700 transition-colors duration-200 flex items-center space-x-1"
-              >
-                <span className="text-sm font-medium">Model Info</span>
-                {isMetricsExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-              </button>
+              <div className="flex items-center space-x-2">
+                <button 
+                  onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                  className="text-gray-500 hover:text-gray-700 transition-colors duration-200 p-1 rounded-full hover:bg-gray-200"
+                  title="Settings"
+                >
+                  <Settings size={20} />
+                </button>
+                <button 
+                  onClick={() => setIsMetricsExpanded(!isMetricsExpanded)}
+                  className="text-gray-500 hover:text-gray-700 transition-colors duration-200 flex items-center space-x-1"
+                >
+                  <span className="text-sm font-medium">Model Info</span>
+                  {isMetricsExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                </button>
+              </div>
             </div>
             {isMetricsExpanded && (
               <div className="text-sm text-gray-600 mt-4 space-y-2 bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -84,8 +152,41 @@ const ChatArea = ({
               </div>
             )}
           </div>
+          {isSettingsOpen && (
+            <div className="bg-white shadow-lg rounded-xl p-4 sm:p-6 border border-gray-200 mt-4">
+              <div className="flex flex-col space-y-4">
+                <div className="flex items-center space-x-3">
+                  <span className="font-medium">Voice:</span>
+                  <select
+                    value={selectedVoice}
+                    onChange={(e) => setSelectedVoice(e.target.value)}
+                    className="text-sm border rounded p-1 flex-1"
+                  >
+                    {voices.map((voice) => (
+                      <option key={voice.name} value={voice.name}>
+                        {voice.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <span className="font-medium">Speed:</span>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2"
+                    step="0.1"
+                    value={speechRate}
+                    onChange={(e) => setSpeechRate(Number(e.target.value))}
+                    className="flex-1"
+                  />
+                  <span className="text-sm">{speechRate.toFixed(1)}x</span>
+                </div>
+              </div>
+            </div>
+          )}
           {clearContextTimestamp && (
-            <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg shadow-md" role="alert">
+            <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg shadow-md mt-4" role="alert">
               <p className="font-bold">Context Cleared</p>
               <p>The conversation context was cleared on {new Date(clearContextTimestamp).toLocaleString()}.</p>
             </div>
@@ -114,6 +215,7 @@ const ChatArea = ({
                       <div className="flex items-center space-x-2 sm:space-x-3">
                         <p className="text-xs text-gray-500 hidden sm:inline">{new Date(message.timestamp).toLocaleString()}</p>
                         <CopyButton text={message.content} />
+                        {message.role !== 'user' && <SpeakButton text={message.content} />}
                       </div>
                     </div>
                     <MarkdownRenderer 
@@ -122,7 +224,7 @@ const ChatArea = ({
                         const match = /language-(\w+)/.exec(className || '');
                         return !inline && match ? (
                           <div className="relative mt-4">
-                            <pre {...props} className={`${className} relative overflow-x-auto p-2 sm:p-4 rounded-lg bg-gray-800 text-white text-sm sm:text-base`}>
+                            <pre {...props} className={`${className} relative overflow-x-auto p-2 sm:p4 rounded-lg bg-gray-800 text-white text-sm sm:text-base`}>
                               <code>{children}</code>
                             </pre>
                             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -188,6 +290,13 @@ const ChatArea = ({
           </p>
         </div>
       </div>
+      {isSpeaking && (
+        <div className="fixed bottom-4 right-4 bg-white p-2 rounded-full shadow-lg">
+          <button onClick={stopSpeaking} className="text-red-500 hover:text-red-700 transition-colors duration-200">
+            <VolumeX size={24} />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

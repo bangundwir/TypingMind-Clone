@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Button from '../common/Button';
 import Modal from '../common/Modal';
-import { X, ChevronRight, ChevronDown, Eye, EyeOff, Download, Upload, Menu } from 'lucide-react';
+import { X, ChevronRight, ChevronDown, Eye, EyeOff, Download, Upload } from 'lucide-react';
 import ApiUsage from '../ApiUsage/ApiUsage';
 import { DragDropContext } from 'react-beautiful-dnd';
-import ChatList from './ChatList';
 import FolderList from './FolderList';
 import Settings from './Settings';
 import Templates from './Templates';
@@ -40,6 +39,10 @@ const Sidebar = ({
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importedData, setImportedData] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
+  const [isRenameFolderModalOpen, setIsRenameFolderModalOpen] = useState(false);
+  const [currentFolderId, setCurrentFolderId] = useState('default');
+  const [folderName, setFolderName] = useState('');
 
   useEffect(() => {
     const handleResize = () => {
@@ -78,6 +81,39 @@ const Sidebar = ({
     }
   };
 
+  const openCreateFolderModal = () => {
+    setFolderName('');
+    setIsCreateFolderModalOpen(true);
+  };
+
+  const handleCreateFolderSubmit = () => {
+    if (folderName.trim()) {
+      onCreateFolder(folderName);
+      setIsCreateFolderModalOpen(false);
+    } else {
+      alert('Folder name cannot be empty.');
+    }
+  };
+
+  const openRenameFolderModal = (folderId) => {
+    setCurrentFolderId(folderId);
+    setFolderName(folders.find(folder => folder.id === folderId)?.name || '');
+    setIsRenameFolderModalOpen(true);
+  };
+
+  const handleRenameFolderSubmit = () => {
+    if (folderName.trim()) {
+      onRenameFolder(currentFolderId, folderName);
+      setIsRenameFolderModalOpen(false);
+    } else {
+      alert('Folder name cannot be empty.');
+    }
+  };
+
+  const handleNewChat = () => {
+    onNewChat(currentFolderId);
+  };
+
   return (
     <div className="h-full flex flex-col p-2 md:p-4 overflow-hidden relative bg-gray-900 text-white">
       {isMobile && (
@@ -89,10 +125,10 @@ const Sidebar = ({
         </button>
       )}
       <div className="flex flex-col space-y-2 mb-4">
-        <Button onClick={() => onNewChat('default')} className="w-full text-sm py-2">
+        <Button onClick={handleNewChat} className="w-full text-sm py-2">
           New Chat
         </Button>
-        <Button onClick={() => onCreateFolder()} className="w-full text-sm py-2">
+        <Button onClick={openCreateFolderModal} className="w-full text-sm py-2">
           Create Folder
         </Button>
       </div>
@@ -105,9 +141,11 @@ const Sidebar = ({
             onRenameChat={onRenameChat}
             onDeleteChat={onDeleteChat}
             onCreateFolder={onCreateFolder}
-            onRenameFolder={onRenameFolder}
+            onRenameFolder={openRenameFolderModal}
             onDeleteFolder={onDeleteFolder}
             onNewChat={onNewChat}
+            currentFolderId={currentFolderId}
+            setCurrentFolderId={setCurrentFolderId}
           />
         </div>
       </DragDropContext>
@@ -171,6 +209,46 @@ const Sidebar = ({
           <div className="flex justify-end">
             <Button onClick={confirmImport} className="text-xs px-2 py-1">
               Confirm
+            </Button>
+          </div>
+        </div>
+      </Modal>
+      <Modal
+        title="Create New Folder"
+        isOpen={isCreateFolderModalOpen}
+        onClose={() => setIsCreateFolderModalOpen(false)}
+      >
+        <div className="space-y-4">
+          <input
+            type="text"
+            value={folderName}
+            onChange={(e) => setFolderName(e.target.value)}
+            placeholder="Enter folder name"
+            className="w-full p-2 bg-gray-800 text-white rounded"
+          />
+          <div className="flex justify-end">
+            <Button onClick={handleCreateFolderSubmit} className="text-xs px-2 py-1">
+              Create
+            </Button>
+          </div>
+        </div>
+      </Modal>
+      <Modal
+        title="Rename Folder"
+        isOpen={isRenameFolderModalOpen}
+        onClose={() => setIsRenameFolderModalOpen(false)}
+      >
+        <div className="space-y-4">
+          <input
+            type="text"
+            value={folderName}
+            onChange={(e) => setFolderName(e.target.value)}
+            placeholder="Enter new folder name"
+            className="w-full p-2 bg-gray-800 text-white rounded"
+          />
+          <div className="flex justify-end">
+            <Button onClick={handleRenameFolderSubmit} className="text-xs px-2 py-1">
+              Rename
             </Button>
           </div>
         </div>
