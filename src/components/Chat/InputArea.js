@@ -1,22 +1,27 @@
-// src/components/Chat/InputArea.js
-import React, { useState, useEffect } from 'react';
-import Button from '../common/Button';
-import { Send, CornerDownLeft, ToggleLeft, ToggleRight } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Send } from 'lucide-react';
 
 const InputArea = ({ onSendMessage }) => {
   const [message, setMessage] = useState('');
   const [sendOnEnter, setSendOnEnter] = useState(false);
+  const [tokenCount, setTokenCount] = useState(0);
+  const textareaRef = useRef(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (message.trim()) {
       onSendMessage(message);
       setMessage('');
+      setTokenCount(0);
+      textareaRef.current.style.height = 'auto';
     }
   };
 
   const handleChange = (e) => {
-    setMessage(e.target.value);
+    const newMessage = e.target.value;
+    setMessage(newMessage);
+    setTokenCount(countTokens(newMessage));
+    adjustTextareaHeight();
   };
 
   const handleKeyPress = (e) => {
@@ -27,12 +32,16 @@ const InputArea = ({ onSendMessage }) => {
   };
 
   const toggleSendOnEnter = () => {
-    setSendOnEnter(!sendOnEnter);
+    const newSendOnEnter = !sendOnEnter;
+    setSendOnEnter(newSendOnEnter);
+    localStorage.setItem('sendOnEnter', JSON.stringify(newSendOnEnter));
   };
 
-  useEffect(() => {
-    localStorage.setItem('sendOnEnter', JSON.stringify(sendOnEnter));
-  }, [sendOnEnter]);
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  };
 
   useEffect(() => {
     const savedSendOnEnter = localStorage.getItem('sendOnEnter');
@@ -41,36 +50,50 @@ const InputArea = ({ onSendMessage }) => {
     }
   }, []);
 
+  // Fungsi sederhana untuk menghitung token (dalam hal ini, kita menganggap satu kata sebagai satu token)
+  const countTokens = (text) => {
+    return text.trim().split(/\s+/).length;
+  };
+
   return (
-    <div className="bg-white p-4 border-t">
+    <div className="bg-white p-3 border-t">
       <form onSubmit={handleSubmit} className="flex flex-col">
-        <div className="relative w-full mb-2">
+        <div className="flex items-center justify-between mb-2">
+          <label className="flex items-center cursor-pointer">
+            <div className="relative">
+              <input type="checkbox" className="sr-only" checked={sendOnEnter} onChange={toggleSendOnEnter} />
+              <div className={`block w-8 h-4 rounded-full transition-colors duration-300 ease-in-out ${sendOnEnter ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
+              <div className={`absolute left-0.5 top-0.5 bg-white w-3 h-3 rounded-full transition-transform duration-300 ease-in-out ${sendOnEnter ? 'transform translate-x-4' : ''}`}></div>
+            </div>
+            <span className={`ml-2 text-xs font-medium ${sendOnEnter ? 'text-blue-500' : 'text-gray-600'}`}>
+              Enter untuk kirim
+            </span>
+          </label>
+          <span className="text-xs font-medium text-gray-600">
+            Token: {tokenCount}
+          </span>
+        </div>
+        <div className="relative w-full">
           <textarea
+            ref={textareaRef}
             value={message}
             onChange={handleChange}
             onKeyPress={handleKeyPress}
-            placeholder="Type your message..."
-            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[100px]"
-            rows="4"
+            placeholder="Ketik pesan..."
+            className="w-full p-2 pr-10 border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none min-h-[40px] max-h-[160px] overflow-y-auto text-sm"
+            rows="1"
           />
           <button
             type="submit"
-            className="absolute bottom-3 right-3 bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition duration-200"
-          >
-            <Send size={20} />
-          </button>
-        </div>
-        <div className="flex justify-between items-center mb-2">
-          <Button
-            onClick={toggleSendOnEnter}
-            className={`text-xs px-3 py-2 rounded-full flex items-center space-x-2 ${
-              sendOnEnter ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-300 hover:bg-gray-400'
+            className={`absolute bottom-1.5 right-1.5 p-1.5 rounded-full transition-all duration-300 ease-in-out ${
+              message.trim() 
+                ? 'bg-blue-500 hover:bg-blue-600 text-white' 
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
+            disabled={!message.trim()}
           >
-            {sendOnEnter ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
-            <span className="hidden sm:inline">Enter to Send: {sendOnEnter ? 'On' : 'Off'}</span>
-            <CornerDownLeft size={16} className="sm:hidden" />
-          </Button>
+            <Send size={18} className={message.trim() ? 'transform rotate-0' : 'transform -rotate-45'} />
+          </button>
         </div>
       </form>
     </div>

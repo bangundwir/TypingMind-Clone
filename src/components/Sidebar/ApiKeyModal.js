@@ -35,7 +35,7 @@ const ApiKeyModal = ({ isOpen, onClose, apiKey, setApiKey }) => {
         <Button onClick={handleSave} className="w-full">
           Activate License
         </Button>
-        <p className="text-xs text-center text-gray-400">
+        <p className="text-xs text-center text-gray-400"> 
           The app will connect to the license server to verify your license key. To manage your license keys and devices, click the button below.
         </p>
         <div className="flex justify-center space-x-2">
