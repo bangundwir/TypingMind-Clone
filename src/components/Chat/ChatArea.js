@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import MarkdownRenderer from '../common/MarkdownRenderer';
 import { MODEL_CONFIGS } from '../../utils/modelUtils';
-import { Copy, Check, ChevronDown, ChevronUp, User, Bot, MessageSquare, Zap } from 'lucide-react';
+import { Copy, Check, ChevronDown, ChevronUp, User, Bot, MessageSquare, Zap, Hash, Type } from 'lucide-react';
 
 const ChatArea = ({ 
   messages, 
@@ -138,14 +138,19 @@ const ChatArea = ({
                     />
                     <div className="text-xs text-gray-500 mt-3 sm:mt-4 flex flex-wrap justify-between items-center pt-2 border-t border-gray-200">
                       <span className="flex items-center space-x-1 mr-2 mb-1">
+                        <Type size={14} />
+                        <span>Chars: {message.content.length}</span>
+                      </span>
+                      <span className="flex items-center space-x-1 mr-2 mb-1">
                         <MessageSquare size={14} />
                         <span>Words: {message.wordCount}</span>
                       </span>
                       <span className="flex items-center space-x-1 mr-2 mb-1">
-                        <Zap size={14} />
+                        <Hash size={14} />
                         <span>Tokens: {message.tokenCount}</span>
                       </span>
                       <span className="flex items-center space-x-1">
+                        <Zap size={14} />
                         <span>Cost: ${typeof message.cost === 'number' ? message.cost.toFixed(6) : 'N/A'}</span>
                       </span>
                     </div>
@@ -174,11 +179,11 @@ const ChatArea = ({
       <div className="bg-white p-3 sm:p-4 border-t shadow-lg">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs sm:text-sm text-gray-600">
           <p className="font-semibold mb-1 sm:mb-0 flex items-center">
-            <Zap size={16} className="mr-1 text-blue-500" />
+            <Hash size={16} className="mr-1 text-blue-500" />
             Total Tokens: <span className="text-blue-600 ml-1">{totalTokens.toLocaleString()}</span>
           </p>
           <p className="font-semibold flex items-center">
-            <span className="mr-1">💰</span>
+            <Zap size={16} className="mr-1 text-green-500" />
             Total Cost: <span className="text-green-600 ml-1">${typeof totalCost === 'number' ? totalCost.toFixed(6) : 'N/A'}</span>
           </p>
         </div>
