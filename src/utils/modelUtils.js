@@ -77,6 +77,13 @@ export const MODEL_CONFIGS = {
     outputCost: 0, // per 1M tokens
     imageCost: 0, // assuming no image processing capability
   },
+  'google/gemma-2-9b-it': {
+    name: 'Gemma 2 9B',
+    contextLength: 8192,
+    inputCost: 0.08, // per 1M tokens
+    outputCost: 0.08, // per 1M tokens
+    imageCost: 0 // assuming no image processing capability
+  },
   "qwen/qwen-2-7b-instruct:free": {
     name: "Qwen 2 7B Instruct (free)",
     contextLength: 32768,
@@ -129,6 +136,20 @@ export const MODEL_CONFIGS = {
     inputCost: 1, // per 1M tokens
     outputCost: 1, // per 1M tokens
     imageCost: 5, // per 1K requests
+  },
+  '01-ai/yi-large-turbo': {
+    name: 'Yi Large Turbo',
+    contextLength: 4096,
+    inputCost: 0.19, // per 1M tokens
+    outputCost: 0.19, // per 1M tokens
+    imageCost: 0 // assuming no image processing capability
+  },
+  'mistralai/mistral-nemo': {
+    name: 'Mistral Nemo',
+    contextLength: 128000,
+    inputCost: 0.17, // per 1M tokens
+    outputCost: 0.17, // per 1M tokens
+    imageCost: 0 // assuming no image processing capability
   },
 };
 

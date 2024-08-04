@@ -1,9 +1,11 @@
+// src/pages/Home.js
+
 import React, { useState, useEffect } from 'react';
 import { useChatContext } from '../contexts/ChatContext';
 import Sidebar from '../components/Sidebar';
 import { ChatArea, InputArea } from '../components/Chat';
 import Button from '../components/common/Button';
-import { Menu, X, Copy, RefreshCw, Trash2, Plus, Calendar, MessageCircle } from 'lucide-react';
+import { Menu, X, Copy, RefreshCw, Trash2, Plus, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Home = () => {
   const { 
@@ -17,10 +19,11 @@ const Home = () => {
     previewMessage,
     selectedModel,
     models,
+    modelConfig,
     initialSystemInstruction,
     setApiKey,
     handleSendMessage,
-    handleNewChat,
+    handleNewChat, // Already imported
     handleSelectChat,
     handleDeleteChat,
     handleRenameChat,
@@ -36,13 +39,13 @@ const Home = () => {
     handleDeleteFolder,
     exportData,
     importData,
-    onMoveChatToFolder,
+    onMoveChatToFolder, // Function imported from ChatContext
   } = useChatContext();
 
-  const [isApiKeyVisible, setIsApiKeyVisible] = useState(false);
-  const [isSidebarVisible, setIsSidebarVisible] = useState(false);
+  const [isApiKeyVisible, setIsApiKeyVisible] = useState(true);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [areActionButtonsVisible, setAreActionButtonsVisible] = useState(true);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
 
   const toggleApiKeyVisibility = () => setIsApiKeyVisible(!isApiKeyVisible);
   const toggleSidebar = () => setIsSidebarVisible(!isSidebarVisible);
@@ -59,13 +62,10 @@ const Home = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      const newIsDesktop = window.innerWidth >= 1024;
+      const newIsDesktop = window.innerWidth >= 768;
       setIsDesktop(newIsDesktop);
       if (newIsDesktop) {
         setIsSidebarVisible(true);
-        setAreActionButtonsVisible(true);
-      } else {
-        setIsSidebarVisible(false);
       }
     };
 
@@ -81,21 +81,23 @@ const Home = () => {
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
+      {!isDesktop && (
+        <div 
+          className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 ease-in-out ${
+            isSidebarVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
+          onClick={toggleSidebar}
+        ></div>
+      )}
       <div 
-        className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 ease-in-out ${
-          isSidebarVisible && !isDesktop ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
-        onClick={toggleSidebar}
-      ></div>
-      <div 
-        className={`fixed lg:relative inset-y-0 left-0 z-50 w-80 max-w-full bg-gray-900 text-white overflow-y-auto transition-all duration-300 ease-in-out transform ${
+        className={`fixed md:relative inset-y-0 left-0 z-50 w-64 bg-gray-900 text-white overflow-y-auto transition-all duration-300 ease-in-out transform ${
           isSidebarVisible ? 'translate-x-0' : '-translate-x-full'
-        } ${isDesktop ? 'lg:translate-x-0' : ''}`}
+        } ${isDesktop ? 'md:translate-x-0' : ''}`}
       >
         <Sidebar 
           folders={folders} 
           currentChatId={currentChatId} 
-          onNewChat={handleNewChat}
+          onNewChat={handleNewChat} // Already connected to Sidebar
           onSelectChat={(chatId) => {
             handleSelectChat(chatId);
             if (!isDesktop) {
@@ -121,25 +123,31 @@ const Home = () => {
           onDeleteFolder={handleDeleteFolder}
           exportData={exportData}
           importData={importData}
-          onMoveChatToFolder={onMoveChatToFolder}
+          onMoveChatToFolder={onMoveChatToFolder} // Passed as a prop
         />
       </div>
       <div className="flex flex-col flex-1 overflow-hidden">
-        <header className="bg-white shadow-sm p-3 flex justify-between items-center">
-          <div className="flex space-x-3 items-center">
-            <Button onClick={toggleSidebar} className="text-gray-600 hover:text-gray-900 p-2 rounded-full hover:bg-gray-200 transition-colors duration-200">
-              <Menu size={24} />
-            </Button>
-            <Button onClick={toggleActionButtons} className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-full hover:bg-gray-200 transition-colors duration-200">
-              {areActionButtonsVisible ? <X size={24} /> : <MessageCircle size={24} />}
+        <div className="bg-white p-2 border-b flex justify-between items-center">
+          <div className="flex space-x-2 items-center">
+            {isDesktop ? (
+              <Button onClick={toggleSidebar} className="text-xs px-2 py-1 rounded-full">
+                {isSidebarVisible ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+              </Button>
+            ) : (
+              <Button onClick={toggleSidebar} className="text-xs px-2 py-1 rounded-full">
+                <Menu size={20} />
+              </Button>
+            )}
+            <Button onClick={toggleActionButtons} className="md:hidden text-xs px-2 py-1 rounded-full">
+              {areActionButtonsVisible ? <X size={20} /> : <Menu size={20} />}
             </Button>
           </div>
-          <div className="text-sm text-gray-500 flex items-center bg-gray-100 px-3 py-1 rounded-full">
-            <Calendar size={18} className="mr-2" />
+          <div className="text-sm text-gray-500 flex items-center">
+            <Calendar size={16} className="mr-1" />
             {new Date().toLocaleDateString()}
           </div>
-        </header>
-        <main className="flex-1 overflow-hidden flex flex-col">
+        </div>
+        <div className="flex-1 overflow-hidden">
           <ChatArea 
             messages={messages} 
             isLoading={isLoading}
@@ -151,27 +159,29 @@ const Home = () => {
             totalTokens={totalTokens}
             totalCost={totalCost}
           />
-          {(isDesktop || areActionButtonsVisible) && (
-            <div className="bg-white p-3 border-t flex flex-wrap justify-center items-center gap-2">
-              <Button onClick={handleRegenerate} className="text-sm px-4 py-2 rounded-full flex items-center bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200">
-                <RefreshCw size={16} className="mr-2" /> Regenerate
+        </div>
+        {areActionButtonsVisible && (
+          <div className="bg-white p-2 border-t flex flex-wrap justify-start items-center">
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={handleRegenerate} className="text-xs px-3 py-2 rounded-full flex items-center">
+                <RefreshCw size={16} className="mr-1" /> Regenerate
               </Button>
-              <Button onClick={handleClearContext} className="text-sm px-4 py-2 rounded-full flex items-center bg-red-500 text-white hover:bg-red-600 transition-colors duration-200">
-                <Trash2 size={16} className="mr-2" /> Clear Context
+              <Button onClick={handleClearContext} className="text-xs px-3 py-2 rounded-full flex items-center">
+                <Trash2 size={16} className="mr-1" /> Clear Context
               </Button>
-              <Button onClick={() => handleNewChat('default')} className="text-sm px-4 py-2 rounded-full flex items-center bg-green-500 text-white hover:bg-green-600 transition-colors duration-200">
-                <Plus size={16} className="mr-2" /> New Chat
+              <Button onClick={() => handleNewChat('default')} className="text-xs px-3 py-2 rounded-full flex items-center">
+                <Plus size={16} className="mr-1" /> New Chat
               </Button>
-              <Button onClick={handleCopyChat} className="text-sm px-4 py-2 rounded-full flex items-center bg-yellow-500 text-white hover:bg-yellow-600 transition-colors duration-200">
-                <Copy size={16} className="mr-2" /> Copy Chat
+              <Button onClick={handleCopyChat} className="text-xs px-3 py-2 rounded-full flex items-center">
+                <Copy size={16} className="mr-1" /> Copy Chat
               </Button>
             </div>
-          )}
-          <InputArea 
-            onSendMessage={handleSendMessage}
-            onPreviewChange={setPreviewMessage}
-          />
-        </main>
+          </div>
+        )}
+        <InputArea 
+          onSendMessage={handleSendMessage}
+          onPreviewChange={setPreviewMessage}
+        />
       </div>
     </div>
   );

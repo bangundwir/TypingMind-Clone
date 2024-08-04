@@ -1,3 +1,5 @@
+// src/components/Sidebar/Sidebar.js
+
 import React, { useState, useEffect } from 'react';
 import Button from '../common/Button';
 import Modal from '../common/Modal';
@@ -43,14 +45,30 @@ const Sidebar = ({
   const [isRenameFolderModalOpen, setIsRenameFolderModalOpen] = useState(false);
   const [currentFolderId, setCurrentFolderId] = useState('default');
   const [folderName, setFolderName] = useState('');
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
 
+    const handleKeyboardShow = () => {
+      setIsKeyboardVisible(true);
+    };
+
+    const handleKeyboardHide = () => {
+      setIsKeyboardVisible(false);
+    };
+
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('focusin', handleKeyboardShow);
+    window.addEventListener('focusout', handleKeyboardHide);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('focusin', handleKeyboardShow);
+      window.removeEventListener('focusout', handleKeyboardHide);
+    };
   }, []);
 
   const toggleSettings = () => setIsSettingsOpen(!isSettingsOpen);
@@ -116,7 +134,7 @@ const Sidebar = ({
 
   return (
     <div className="h-full flex flex-col p-2 md:p-4 overflow-hidden relative bg-gray-900 text-white">
-      {isMobile && (
+      {isMobile && !isKeyboardVisible && (
         <button 
           onClick={onCloseSidebar}
           className="absolute top-2 right-2 text-gray-400 hover:text-gray-200"
@@ -175,6 +193,7 @@ const Sidebar = ({
           setSavedPrompts={setSavedPrompts}
           initialSystemInstruction={initialSystemInstruction}
           setInitialSystemInstruction={setInitialSystemInstruction}
+          isMobile={isMobile}
         />
         <button
           onClick={toggleApiUsageVisibility}
@@ -258,3 +277,6 @@ const Sidebar = ({
 };
 
 export default Sidebar;
+
+// src/components/Sidebar/Templates.js
+// Hanya tambahkan props isMobile untuk menghindari warning

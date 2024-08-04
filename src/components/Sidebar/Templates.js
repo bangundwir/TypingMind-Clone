@@ -1,10 +1,11 @@
-// Sidebar/Templates.js
+// src/components/Sidebar/Templates.js
+
 import React, { useState, useEffect } from 'react';
 import Button from '../common/Button';
 import Modal from '../common/Modal';
 import { ChevronRight, ChevronDown, Edit3, Trash2, Plus, Search, X } from 'lucide-react';
 
-const Templates = ({ savedPrompts, setSavedPrompts, initialSystemInstruction, setInitialSystemInstruction }) => {
+const Templates = ({ savedPrompts, setSavedPrompts, initialSystemInstruction, setInitialSystemInstruction, isMobile }) => {
   const [isPromptDropdownOpen, setIsPromptDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('add');
@@ -12,15 +13,16 @@ const Templates = ({ savedPrompts, setSavedPrompts, initialSystemInstruction, se
   const [newTemplateName, setNewTemplateName] = useState('');
   const [activePromptId, setActivePromptId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
+  // Menyimpan isMobile ke dalam useEffect
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    if (isMobile && isPromptDropdownOpen) {
+      document.body.classList.add('overflow-hidden');
+    } else {
+      document.body.classList.remove('overflow-hidden');
+    }
+    return () => document.body.classList.remove('overflow-hidden');
+  }, [isMobile, isPromptDropdownOpen]);
 
   const togglePromptDropdown = () => setIsPromptDropdownOpen(!isPromptDropdownOpen);
   const closePromptDropdown = () => setIsPromptDropdownOpen(false);

@@ -62,10 +62,10 @@ const InputArea = ({ onSendMessage }) => {
   };
 
   return (
-    <div className="bg-white p-4 border-t shadow-md">
+    <div className="bg-white p-2 sm:p-4 border-t shadow-md">
       <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-2">
-          <label className="flex items-center cursor-pointer">
+        <div className="flex flex-wrap items-center justify-between mb-2">
+          <label className="flex items-center cursor-pointer mb-2 sm:mb-0">
             <div className="relative">
               <input type="checkbox" className="sr-only" checked={sendOnEnter} onChange={toggleSendOnEnter} />
               <div className={`block w-10 h-6 rounded-full transition-colors duration-300 ease-in-out ${sendOnEnter ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
