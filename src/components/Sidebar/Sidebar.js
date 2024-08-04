@@ -1,5 +1,3 @@
-// src/components/Sidebar/Sidebar.js
-
 import React, { useState, useEffect } from 'react';
 import Button from '../common/Button';
 import Modal from '../common/Modal';
@@ -132,6 +130,18 @@ const Sidebar = ({
     onNewChat(currentFolderId);
   };
 
+  const onDragEnd = (result) => {
+    const { source, destination } = result;
+
+    if (!destination) {
+      return;
+    }
+
+    if (source.droppableId !== destination.droppableId) {
+      onMoveChatToFolder(result.draggableId, destination.droppableId);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col p-2 md:p-4 overflow-hidden relative bg-gray-900 text-white">
       {isMobile && !isKeyboardVisible && (
@@ -150,7 +160,7 @@ const Sidebar = ({
           Create Folder
         </Button>
       </div>
-      <DragDropContext onDragEnd={(result) => onMoveChatToFolder(result.draggableId, result.destination.droppableId)}>
+      <DragDropContext onDragEnd={onDragEnd}>
         <div className="flex-grow overflow-y-auto">
           <FolderList
             folders={folders}
@@ -277,6 +287,3 @@ const Sidebar = ({
 };
 
 export default Sidebar;
-
-// src/components/Sidebar/Templates.js
-// Hanya tambahkan props isMobile untuk menghindari warning
