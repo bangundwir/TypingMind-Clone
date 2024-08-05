@@ -1,3 +1,4 @@
+// components/Sidebar/Settings.js
 import React, { useState } from 'react';
 import Button from '../common/Button';
 import { Eye, EyeOff } from 'lucide-react';
@@ -11,6 +12,8 @@ const Settings = ({
   setApiKey,
   initialSystemInstruction,
   setInitialSystemInstruction,
+  baseUrlKey,
+  setBaseUrlKey,
 }) => {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
 
@@ -33,6 +36,21 @@ const Settings = ({
               {model.name}
             </option>
           ))}
+        </select>
+      </div>
+      <div>
+        <label className="block text-sm font-bold mb-2" htmlFor="base-url-select">
+          Select Base URL
+        </label>
+        <select
+          id="base-url-select"
+          value={baseUrlKey}
+          onChange={(e) => setBaseUrlKey(e.target.value)}
+          className="w-full p-2 bg-gray-800 text-white rounded"
+        >
+          <option value="openrouter">OpenRouter</option>
+          <option value="together">Together AI</option>
+          <option value="groq">Groq</option>
         </select>
       </div>
       <div>

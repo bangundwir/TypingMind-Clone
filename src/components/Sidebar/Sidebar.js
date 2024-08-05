@@ -17,8 +17,8 @@ const Sidebar = ({
   onRenameChat,
   apiKey,
   setApiKey,
-  isApiKeyVisible,
-  toggleApiKeyVisibility,
+  baseUrlKey,
+  setBaseUrlKey,
   models,
   selectedModel,
   onModelChange,
@@ -187,13 +187,13 @@ const Sidebar = ({
         </button>
         {isSettingsOpen && (
           <Settings
-            models={models}
+            models={models}  
             selectedModel={selectedModel}
             onModelChange={onModelChange}
             apiKey={apiKey}
             setApiKey={setApiKey}
-            isApiKeyVisible={isApiKeyVisible}
-            toggleApiKeyVisibility={toggleApiKeyVisibility}
+            baseUrlKey={baseUrlKey}
+            setBaseUrlKey={setBaseUrlKey}
             initialSystemInstruction={initialSystemInstruction}
             setInitialSystemInstruction={setInitialSystemInstruction}
           />
@@ -212,7 +212,7 @@ const Sidebar = ({
           <span>API Usage</span>
           {isApiUsageVisible ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </button>
-        {isApiUsageVisible && <ApiUsage apiKey={apiKey} />}
+        {isApiUsageVisible && <ApiUsage apiKey={apiKey} baseUrlKey={baseUrlKey} />}
       </div>
       <div className="mt-4 space-y-2">
         <Button onClick={handleExport} className="w-full text-sm py-2 flex items-center justify-center">

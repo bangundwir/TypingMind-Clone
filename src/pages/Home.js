@@ -20,6 +20,8 @@ const Home = () => {
     modelConfig,
     initialSystemInstruction,
     setApiKey,
+    baseUrlKey,
+    setBaseUrlKey,
     handleSendMessage,
     handleNewChat,
     handleSelectChat,
@@ -103,6 +105,8 @@ const Home = () => {
           onRenameChat={handleRenameChat}
           apiKey={apiKey}
           setApiKey={setApiKey}
+          baseUrlKey={baseUrlKey}
+          setBaseUrlKey={setBaseUrlKey}
           isApiKeyVisible={isApiKeyVisible}
           toggleApiKeyVisibility={toggleApiKeyVisibility}
           models={models}

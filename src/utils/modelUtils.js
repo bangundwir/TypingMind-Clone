@@ -151,6 +151,48 @@ export const MODEL_CONFIGS = {
     outputCost: 0.17, // per 1M tokens
     imageCost: 0 // assuming no image processing capability
   },
+  'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo': {
+    name: 'TogetherAI-Meta-Llama-3.1-8B-Instruct-Turbo',
+    contextLength: 128000,
+    inputCost: 0.18, // per 1M tokens
+    outputCost: 0.18, // per 1M tokens
+    imageCost: 0 // assuming no image processing capability
+  },
+  'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo': {
+    name: 'TogetherAI-Meta-Llama-3.1-70B-Instruct-Turbo',
+    contextLength: 128000,
+    inputCost: 0.88, // per 1M tokens
+    outputCost: 0.88, // per 1M tokens
+    imageCost: 0 // assuming no image processing capability
+  },
+  'meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo': {
+    name: 'TogetherAI-Meta-Llama-3.1-405B-Instruct-Turbo',
+    contextLength: 128000,
+    inputCost: 5, // per 1M tokens
+    outputCost: 5, // per 1M tokens
+    imageCost: 0 // assuming no image processing capability
+  },
+  'llama-3.1-70b-versatile': {
+    name: 'Groq llama-3.1-70b-versatile',
+    contextLength: 131072,
+    inputCost: 0.17, // per 1M tokens
+    outputCost: 0.17, // per 1M tokens
+    imageCost: 0 // assuming no image processing capability
+  },
+  'llama-3.1-405b-reasoning': {
+    name: 'Groq llama-3.1-405b-reasoning',
+    contextLength: 131072,
+    inputCost: 0.17, // per 1M tokens
+    outputCost: 0.17, // per 1M tokens
+    imageCost: 0 // assuming no image processing capability
+  },
+  'llama-3.1-8b-instant': {
+    name: 'Groq llama-3.1-8b-instant',
+    contextLength: 131072,
+    inputCost: 0.17, // per 1M tokens
+    outputCost: 0.17, // per 1M tokens
+    imageCost: 0 // assuming no image processing capability
+  },
 };
 
 export const calculateTokenCost = (tokens, costPerMillion) => {

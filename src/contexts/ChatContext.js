@@ -1,7 +1,7 @@
 // src/contexts/ChatContext.js
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { createChatCompletion } from '../services/api';
+import { createChatCompletion, fetchApiUsage } from '../services/api';
 import { countWords, estimateTokens } from '../utils/textUtils';
 import { useModelConfig } from '../hooks/useModelConfig';
 import { calculateTokenCost, calculateImageCost } from '../utils/modelUtils';
@@ -21,6 +21,7 @@ export const ChatProvider = ({ children }) => {
   const [previewMessage, setPreviewMessage] = useState('');
   const [initialSystemInstruction, setInitialSystemInstruction] = useLocalStorage('initialSystemInstruction', '');
   const [savedPrompts, setSavedPrompts] = useLocalStorage('savedPrompts', []);
+  const [baseUrlKey, setBaseUrlKey] = useLocalStorage('baseUrlKey', 'openrouter');
 
   const { models, selectedModel, changeSelectedModel, modelConfig } = useModelConfig();
 
@@ -74,7 +75,7 @@ export const ChatProvider = ({ children }) => {
         ? [{ role: 'system', content: initialSystemInstruction }, ...relevantMessages]
         : relevantMessages;
 
-      const response = await createChatCompletion(messagesWithSystemInstruction, apiKey, selectedModel);
+      const response = await createChatCompletion(messagesWithSystemInstruction, apiKey, selectedModel, false, null, baseUrlKey);
 
       const outputTokens = estimateTokens(response.content);
       const outputCost = calculateTokenCost(outputTokens, modelConfig.outputCost);
@@ -177,7 +178,7 @@ export const ChatProvider = ({ children }) => {
             ? [{ role: 'system', content: initialSystemInstruction }, ...relevantMessages.slice(0, -1), lastUserMessage]
             : [...relevantMessages.slice(0, -1), lastUserMessage];
 
-          const response = await createChatCompletion(messagesWithSystemInstruction, apiKey, selectedModel);
+          const response = await createChatCompletion(messagesWithSystemInstruction, apiKey, selectedModel, false, null, baseUrlKey);
 
           const outputTokens = estimateTokens(response.content);
           const outputCost = calculateTokenCost(outputTokens, modelConfig.outputCost);
@@ -277,7 +278,7 @@ export const ChatProvider = ({ children }) => {
   };
 
   const exportData = () => {
-    const data = { folders, apiKey, initialSystemInstruction, savedPrompts };
+    const data = { folders, apiKey, initialSystemInstruction, savedPrompts, baseUrlKey };
     const jsonString = JSON.stringify(data);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const link = document.createElement('a');
@@ -287,11 +288,12 @@ export const ChatProvider = ({ children }) => {
   };
 
   const importData = (importedData) => {
-    const { folders, apiKey, initialSystemInstruction, savedPrompts } = importedData;
+    const { folders, apiKey, initialSystemInstruction, savedPrompts, baseUrlKey } = importedData;
     setFolders(folders);
     setApiKey(apiKey);
     setInitialSystemInstruction(initialSystemInstruction);
     setSavedPrompts(savedPrompts);
+    setBaseUrlKey(baseUrlKey);
   };
 
   const value = {
@@ -306,6 +308,7 @@ export const ChatProvider = ({ children }) => {
     previewMessage,
     models,
     initialSystemInstruction,
+    baseUrlKey,
     setApiKey,
     handleSendMessage,
     handleNewChat,
@@ -326,7 +329,10 @@ export const ChatProvider = ({ children }) => {
     importData,
     onMoveChatToFolder,
     modelConfig,
+    setBaseUrlKey,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 };
+
+export default ChatProvider;

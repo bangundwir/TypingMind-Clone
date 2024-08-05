@@ -1,10 +1,16 @@
 // services/api.js
 import OpenAI from 'openai';
 
-export const createChatCompletion = async (messages, apiKey, modelId, isStreaming = false, signal) => {
+const BASE_URLS = {
+  openrouter: "https://openrouter.ai/api/v1",
+  together: "https://api.together.xyz/v1",
+  groq: "https://api.groq.com/openai/v1",
+};
+
+export const createChatCompletion = async (messages, apiKey, modelId, isStreaming = false, signal, baseUrlKey = 'openrouter') => {
   const openai = new OpenAI({
     apiKey: apiKey,
-    baseURL: "https://openrouter.ai/api/v1",
+    baseURL: BASE_URLS[baseUrlKey],
     dangerouslyAllowBrowser: true,
     defaultHeaders: {
       "HTTP-Referer": window.location.origin,
@@ -52,9 +58,9 @@ export const createChatCompletion = async (messages, apiKey, modelId, isStreamin
   }
 };
 
-export const fetchApiUsage = async (apiKey) => {
+export const fetchApiUsage = async (apiKey, baseUrlKey = 'openrouter') => {
   try {
-    const response = await fetch('https://openrouter.ai/api/v1/auth/key', {
+    const response = await fetch(`${BASE_URLS[baseUrlKey]}/auth/key`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${apiKey}`,
