@@ -1,11 +1,17 @@
+// common/HtmlPreviewer/HtmlPreviewer.js
 import React, { useState, useRef, useEffect } from 'react';
-import { Sandpack } from '@codesandbox/sandpack-react';
-import { X, ExternalLink, RotateCw, Code, Maximize, Minimize } from 'lucide-react';
+import { X, ExternalLink, RotateCw, Code, Maximize, Minimize, Download, Eye, EyeOff, Edit3, Save } from 'lucide-react';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import Button from '../Button';
 
-const HtmlPreviewer = ({ htmlContent, onClose }) => {
+const HtmlPreviewer = ({ htmlContent, onClose, onDownload, onOpenInNewTab }) => {
   const [showCode, setShowCode] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [orientation, setOrientation] = useState('horizontal');
+  const [showLineNumbers, setShowLineNumbers] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editableContent, setEditableContent] = useState(htmlContent);
   const iframeRef = useRef(null);
 
   useEffect(() => {
@@ -25,38 +31,16 @@ const HtmlPreviewer = ({ htmlContent, onClose }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const openInNewTab = () => {
-    const newWindow = window.open();
-    if (newWindow) {
-      newWindow.document.open();
-      newWindow.document.write(htmlContent);
-      newWindow.document.close();
-    }
-  };
-
-  const refreshPreview = () => {
-    if (iframeRef.current) {
-      iframeRef.current.srcdoc = htmlContent;
-    }
-  };
-
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
   };
 
-  const files = {
-    '/index.html': htmlContent,
+  const handleSave = () => {
+    if (iframeRef.current) {
+      iframeRef.current.srcdoc = editableContent;
+    }
+    setIsEditing(false);
   };
-
-  const ButtonTooltip = ({ onClick, title, children }) => (
-    <button
-      onClick={onClick}
-      className="p-2 hover:bg-gray-200 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      title={title}
-    >
-      {children}
-    </button>
-  );
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-2 sm:p-4">
@@ -64,42 +48,94 @@ const HtmlPreviewer = ({ htmlContent, onClose }) => {
         <div className="bg-gray-100 p-2 sm:p-3 flex justify-between items-center border-b">
           <h2 className="text-base sm:text-lg font-semibold">HTML Preview</h2>
           <div className="flex space-x-1 sm:space-x-2">
-            <ButtonTooltip onClick={openInNewTab} title="Open in new tab">
+            <button
+              onClick={onOpenInNewTab}
+              className="p-2 hover:bg-gray-200 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              title="Open in new tab"
+            >
               <ExternalLink size={16} />
-            </ButtonTooltip>
-            <ButtonTooltip onClick={refreshPreview} title="Refresh preview">
+            </button>
+            <button
+              onClick={onDownload}
+              className="p-2 hover:bg-gray-200 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              title="Download HTML"
+            >
+              <Download size={16} />
+            </button>
+            <button
+              onClick={() => {
+                if (iframeRef.current) {
+                  iframeRef.current.srcdoc = htmlContent;
+                }
+              }}
+              className="p-2 hover:bg-gray-200 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              title="Refresh preview"
+            >
               <RotateCw size={16} />
-            </ButtonTooltip>
-            <ButtonTooltip onClick={() => setShowCode(!showCode)} title="Toggle code view">
+            </button>
+            <button
+              onClick={() => setShowCode(!showCode)}
+              className="p-2 hover:bg-gray-200 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              title="Toggle code view"
+            >
               <Code size={16} />
-            </ButtonTooltip>
-            <ButtonTooltip onClick={toggleFullscreen} title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}>
+            </button>
+            <button
+              onClick={() => setShowLineNumbers(!showLineNumbers)}
+              className="p-2 hover:bg-gray-200 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              title="Toggle line numbers"
+            >
+              {showLineNumbers ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+            {isEditing ? (
+              <button
+                onClick={handleSave}
+                className="p-2 hover:bg-gray-200 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                title="Save"
+              >
+                <Save size={16} />
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="p-2 hover:bg-gray-200 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                title="Edit"
+              >
+                <Edit3 size={16} />
+              </button>
+            )}
+            <button
+              onClick={toggleFullscreen}
+              className="p-2 hover:bg-gray-200 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            >
               {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
-            </ButtonTooltip>
-            <ButtonTooltip onClick={onClose} title="Close preview">
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-200 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              title="Close preview"
+            >
               <X size={16} />
-            </ButtonTooltip>
+            </button>
           </div>
         </div>
         <div className={`flex-grow overflow-hidden flex ${orientation === 'vertical' ? 'flex-col' : 'flex-row'}`}>
           {showCode && (
             <div className={`${orientation === 'vertical' ? 'h-1/2' : 'w-1/2'} overflow-auto`}>
-              <Sandpack
-                template="static"
-                files={files}
-                options={{
-                  showNavigator: false,
-                  showTabs: false,
-                  editorHeight: '100%',
-                  editorWidthPercentage: 100,
-                  layout: "preview",
-                  readOnly: true,
-                }}
-                customSetup={{
-                  entry: '/index.html',
-                }}
-                className="h-full [&_.sp-wrapper]:h-full [&_.sp-layout]:h-full [&_.sp-stack]:h-full"
-              />
+              <div className="h-full">
+                {isEditing ? (
+                  <textarea
+                    className="w-full h-full p-2 bg-gray-900 text-white"
+                    value={editableContent}
+                    onChange={(e) => setEditableContent(e.target.value)}
+                  />
+                ) : (
+                  <SyntaxHighlighter style={materialDark} language="html" showLineNumbers={showLineNumbers}>
+                    {editableContent}
+                  </SyntaxHighlighter>
+                )}
+              </div>
             </div>
           )}
           <div className={`${showCode ? (orientation === 'vertical' ? 'h-1/2' : 'w-1/2') : 'w-full h-full'}`}>
