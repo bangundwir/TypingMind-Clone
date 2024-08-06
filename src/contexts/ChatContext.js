@@ -14,7 +14,8 @@ export const ChatProvider = ({ children }) => {
   const [folders, setFolders] = useLocalStorage('folders', [{ id: 'default', name: 'Default', chats: [] }]);
   const [currentChatId, setCurrentChatId] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [apiKey, setApiKey] = useLocalStorage('apiKey', '');
+  const [apiKeys, setApiKeys] = useLocalStorage('apiKeys', []); // Menyimpan API keys dengan nama
+  const [selectedApiKey, setSelectedApiKey] = useLocalStorage('selectedApiKey', ''); // API key yang dipilih
   const [isLoading, setIsLoading] = useState(false);
   const [regeneratedResponses, setRegeneratedResponses] = useState({});
   const [clearContextTimestamp, setClearContextTimestamp] = useState(null);
@@ -46,8 +47,8 @@ export const ChatProvider = ({ children }) => {
   }, [currentChatId, folders]);
 
   const handleSendMessage = async (message) => {
-    if (!apiKey) {
-      alert('Please enter your API key');
+    if (!selectedApiKey) {
+      alert('Please select your API key');
       return;
     }
 
@@ -75,7 +76,7 @@ export const ChatProvider = ({ children }) => {
         ? [{ role: 'system', content: initialSystemInstruction }, ...relevantMessages]
         : relevantMessages;
 
-      const response = await createChatCompletion(messagesWithSystemInstruction, apiKey, selectedModel, false, null, baseUrlKey);
+      const response = await createChatCompletion(messagesWithSystemInstruction, selectedApiKey, selectedModel, false, null, baseUrlKey);
 
       const outputTokens = estimateTokens(response.content);
       const outputCost = calculateTokenCost(outputTokens, modelConfig.outputCost);
@@ -178,7 +179,7 @@ export const ChatProvider = ({ children }) => {
             ? [{ role: 'system', content: initialSystemInstruction }, ...relevantMessages.slice(0, -1), lastUserMessage]
             : [...relevantMessages.slice(0, -1), lastUserMessage];
 
-          const response = await createChatCompletion(messagesWithSystemInstruction, apiKey, selectedModel, false, null, baseUrlKey);
+          const response = await createChatCompletion(messagesWithSystemInstruction, selectedApiKey, selectedModel, false, null, baseUrlKey);
 
           const outputTokens = estimateTokens(response.content);
           const outputCost = calculateTokenCost(outputTokens, modelConfig.outputCost);
@@ -278,7 +279,7 @@ export const ChatProvider = ({ children }) => {
   };
 
   const exportData = () => {
-    const data = { folders, apiKey, initialSystemInstruction, savedPrompts, baseUrlKey };
+    const data = { folders, apiKeys, initialSystemInstruction, savedPrompts, baseUrlKey };
     const jsonString = JSON.stringify(data);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const link = document.createElement('a');
@@ -288,9 +289,9 @@ export const ChatProvider = ({ children }) => {
   };
 
   const importData = (importedData) => {
-    const { folders, apiKey, initialSystemInstruction, savedPrompts, baseUrlKey } = importedData;
+    const { folders, apiKeys, initialSystemInstruction, savedPrompts, baseUrlKey } = importedData;
     setFolders(folders);
-    setApiKey(apiKey);
+    setApiKeys(apiKeys);
     setInitialSystemInstruction(initialSystemInstruction);
     setSavedPrompts(savedPrompts);
     setBaseUrlKey(baseUrlKey);
@@ -300,7 +301,8 @@ export const ChatProvider = ({ children }) => {
     folders,
     currentChatId,
     messages,
-    apiKey,
+    apiKeys,
+    selectedApiKey,
     isLoading,
     regeneratedResponses,
     clearContextTimestamp,
@@ -309,7 +311,8 @@ export const ChatProvider = ({ children }) => {
     models,
     initialSystemInstruction,
     baseUrlKey,
-    setApiKey,
+    setApiKeys,
+    setSelectedApiKey,
     handleSendMessage,
     handleNewChat,
     handleSelectChat,

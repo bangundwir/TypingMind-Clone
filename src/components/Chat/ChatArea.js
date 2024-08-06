@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import MarkdownRenderer from '../common/MarkdownRenderer';
 import { MODEL_CONFIGS } from '../../utils/modelUtils';
-import { Copy, Check, ChevronDown, ChevronUp, User, Bot, MessageSquare, Zap, Hash, Type, Volume2, VolumeX, Settings } from 'lucide-react';
+import { Copy, Check, ChevronDown, ChevronUp, User, Bot, MessageSquare, Zap, Hash, Type, Volume2, VolumeX, Settings, ArrowUp, ArrowDown } from 'lucide-react';
 
 const ChatArea = ({ 
   messages, 
@@ -15,15 +15,24 @@ const ChatArea = ({
   totalCost
 }) => {
   const messagesEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
   const [isMetricsExpanded, setIsMetricsExpanded] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voices, setVoices] = useState([]);
   const [selectedVoice, setSelectedVoice] = useState('');
   const [speechRate, setSpeechRate] = useState(1);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showScrollButtons, setShowScrollButtons] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const scrollToTop = () => {
+    chatContainerRef.current?.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
   };
 
   useEffect(scrollToBottom, [messages, regeneratedResponses, clearContextTimestamp, previewMessage]);
@@ -50,6 +59,23 @@ const ChatArea = ({
   useEffect(() => {
     localStorage.setItem('selectedVoice', selectedVoice);
   }, [selectedVoice]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (chatContainerRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+        setShowScrollButtons(scrollTop > 100 && scrollTop < scrollHeight - clientHeight - 100);
+      }
+    };
+
+    const optimizedHandleScroll = () => {
+      requestAnimationFrame(handleScroll);
+    };
+
+    const containerRef = chatContainerRef.current;
+    containerRef?.addEventListener('scroll', optimizedHandleScroll);
+    return () => containerRef?.removeEventListener('scroll', optimizedHandleScroll);
+  }, []);
 
   const modelConfig = MODEL_CONFIGS[selectedModel];
 
@@ -118,7 +144,7 @@ const ChatArea = ({
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-gradient-to-b from-gray-50 to-gray-100">
-      <div className="flex-1 p-2 sm:p-4 overflow-y-auto">
+      <div className="flex-1 p-2 sm:p-4 overflow-y-auto" ref={chatContainerRef}>
         <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
           <div className="bg-white shadow-lg rounded-xl p-4 sm:p-6 border border-gray-200">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
@@ -294,6 +320,24 @@ const ChatArea = ({
         <div className="fixed bottom-4 right-4 bg-white p-2 rounded-full shadow-lg">
           <button onClick={stopSpeaking} className="text-red-500 hover:text-red-700 transition-colors duration-200">
             <VolumeX size={24} />
+          </button>
+        </div>
+      )}
+      {showScrollButtons && (
+        <div className="fixed top-1/3 right-4 flex flex-col space-y-2">
+          <button
+            onClick={scrollToTop}
+            className="bg-white bg-opacity-50 p-2 rounded-full shadow-lg text-gray-600 hover:text-gray-800 transition-colors duration-200"
+            title="Scroll to Top"
+          >
+            <ArrowUp size={24} />
+          </button>
+          <button
+            onClick={scrollToBottom}
+            className="bg-white bg-opacity-50 p-2 rounded-full shadow-lg text-gray-600 hover:text-gray-800 transition-colors duration-200"
+            title="Scroll to Bottom"
+          >
+            <ArrowDown size={24} />
           </button>
         </div>
       )}

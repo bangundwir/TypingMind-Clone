@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Button from '../common/Button';
 import Modal from '../common/Modal';
-import { ChevronRight, ChevronDown, Edit3, Trash2, Plus, Search, X } from 'lucide-react';
+import { ChevronRight, ChevronDown, Edit3, Trash2, Plus, Search, X, Copy } from 'lucide-react';
 
 const Templates = ({ savedPrompts, setSavedPrompts, initialSystemInstruction, setInitialSystemInstruction, isMobile }) => {
   const [isPromptDropdownOpen, setIsPromptDropdownOpen] = useState(false);
@@ -14,7 +14,6 @@ const Templates = ({ savedPrompts, setSavedPrompts, initialSystemInstruction, se
   const [activePromptId, setActivePromptId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Menyimpan isMobile ke dalam useEffect
   useEffect(() => {
     if (isMobile && isPromptDropdownOpen) {
       document.body.classList.add('overflow-hidden');
@@ -76,6 +75,16 @@ const Templates = ({ savedPrompts, setSavedPrompts, initialSystemInstruction, se
     }
   };
 
+  const handleDuplicateTemplate = (template, event) => {
+    event.stopPropagation();
+    const duplicatedTemplate = {
+      id: Date.now().toString(),
+      name: `${template.name} (Copy)`,
+      content: template.content,
+    };
+    setSavedPrompts([...savedPrompts, duplicatedTemplate]);
+  };
+
   const filteredPrompts = savedPrompts.filter(template => 
     template.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -91,8 +100,8 @@ const Templates = ({ savedPrompts, setSavedPrompts, initialSystemInstruction, se
           {isPromptDropdownOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </Button>
         {isPromptDropdownOpen && (
-          <div className="fixed inset-0 z-10 flex flex-col items-center justify-start p-4 bg-gray-900 bg-opacity-75">
-            <div className="relative w-full max-w-md bg-gray-800 rounded shadow-lg max-h-full overflow-y-auto">
+          <div className="fixed inset-0 z-10 flex flex-col items-center justify-start p-4 bg-gray-900 bg-opacity-75 overflow-hidden">
+            <div className="relative w-full max-w-md bg-gray-800 rounded shadow-lg flex flex-col h-full max-h-full">
               <div className="flex justify-between items-center p-4">
                 <div className="relative w-full">
                   <Search size={16} className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -108,34 +117,42 @@ const Templates = ({ savedPrompts, setSavedPrompts, initialSystemInstruction, se
                   <X size={16} />
                 </button>
               </div>
-              {filteredPrompts.map((template) => (
-                <div
-                  key={template.id}
-                  className={`flex items-center justify-between p-2 rounded cursor-pointer transition-colors duration-200 ${
-                    template.id === activePromptId ? 'bg-gray-600' : 'hover:bg-gray-700'
-                  }`}
-                  onClick={() => handleSelectTemplate(template)}
-                >
-                  <span className="flex-grow truncate">{template.name}</span>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditTemplate(template);
-                      }}
-                      className="text-gray-400 hover:text-white transition-colors duration-200"
-                    >
-                      <Edit3 size={14} />
-                    </button>
-                    <button
-                      onClick={(e) => handleDeleteTemplate(template.id, e)}
-                      className="text-gray-400 hover:text-white transition-colors duration-200"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+              <div className="flex-grow overflow-y-auto">
+                {filteredPrompts.map((template) => (
+                  <div
+                    key={template.id}
+                    className={`flex items-center justify-between p-2 rounded cursor-pointer transition-colors duration-200 ${
+                      template.id === activePromptId ? 'bg-gray-600' : 'hover:bg-gray-700'
+                    }`}
+                    onClick={() => handleSelectTemplate(template)}
+                  >
+                    <span className="flex-grow truncate">{template.name}</span>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={(e) => handleDuplicateTemplate(template, e)}
+                        className="text-gray-400 hover:text-white transition-colors duration-200"
+                      >
+                        <Copy size={14} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditTemplate(template);
+                        }}
+                        className="text-gray-400 hover:text-white transition-colors duration-200"
+                      >
+                        <Edit3 size={14} />
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteTemplate(template.id, e)}
+                        className="text-gray-400 hover:text-white transition-colors duration-200"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         )}

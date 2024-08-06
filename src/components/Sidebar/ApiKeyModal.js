@@ -1,14 +1,24 @@
+// Sidebar/ApiKeyModal.js
 import React, { useState } from 'react';
 import Modal from '../common/Modal';
 import Button from '../common/Button';
 import { Key, ExternalLink, Eye, EyeOff } from 'lucide-react';
 
-const ApiKeyModal = ({ isOpen, onClose, apiKey, setApiKey }) => {
-  const [inputApiKey, setInputApiKey] = useState(apiKey);
+const ApiKeyModal = ({ isOpen, onClose, apiKeys, setApiKeys, selectedApiKey, setSelectedApiKey }) => {
+  const [inputApiKey, setInputApiKey] = useState('');
+  const [apiKeyName, setApiKeyName] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
 
   const handleSave = () => {
-    setApiKey(inputApiKey);
+    if (inputApiKey && apiKeyName) {
+      setApiKeys([...apiKeys, { name: apiKeyName, key: inputApiKey }]);
+      setInputApiKey('');
+      setApiKeyName('');
+    }
+  };
+
+  const handleSelectApiKey = (key) => {
+    setSelectedApiKey(key);
     onClose();
   };
 
@@ -41,7 +51,19 @@ const ApiKeyModal = ({ isOpen, onClose, apiKey, setApiKey }) => {
             {showApiKey ? <EyeOff size={20} /> : <Eye size={20} />}
           </button>
         </div>
-        <div className="text-center">
+        <input
+          type="text"
+          value={apiKeyName}
+          onChange={(e) => setApiKeyName(e.target.value)}
+          placeholder="Enter API key name"
+          className="w-full p-2 bg-gray-800 text-white rounded mt-2"
+        />
+        <div className="transition-transform duration-200 hover:scale-105">
+          <Button onClick={handleSave} className="w-full">
+            Save API Key
+          </Button>
+        </div>
+        <div className="text-center mt-4">
           <a 
             href={openRouterUrl}
             target="_blank"
@@ -52,23 +74,21 @@ const ApiKeyModal = ({ isOpen, onClose, apiKey, setApiKey }) => {
             <ExternalLink size={16} className="ml-1" />
           </a>
         </div>
-        <div className="transition-transform duration-200 hover:scale-105">
-          <Button onClick={handleSave} className="w-full">
-            Save API Key
-          </Button>
-        </div>
         <p className="text-xs text-center text-gray-400"> 
           Your API key is stored locally and never sent to our servers. It's used to authenticate requests to OpenRouter.
         </p>
-        <div className="flex justify-center space-x-2">
-          <div className="transition-transform duration-200 hover:scale-105">
-            <Button 
-              onClick={() => window.open(openRouterUrl, '_blank')}
-              className="text-xs px-2 py-1 flex items-center"
-            >
-              Manage API Key <ExternalLink size={12} className="ml-1" />
-            </Button>
-          </div>
+        <div className="mt-4">
+          <h3 className="text-lg font-bold">Select an API Key</h3>
+          <ul className="space-y-2 mt-2">
+            {apiKeys.map(({ name, key }) => (
+              <li key={key} className="flex items-center justify-between">
+                <span>{name}</span>
+                <Button onClick={() => handleSelectApiKey(key)} className="text-xs px-2 py-1">
+                  Select
+                </Button>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </Modal>

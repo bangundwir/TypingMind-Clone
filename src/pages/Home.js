@@ -1,3 +1,4 @@
+// pages/Home.js
 import React, { useState, useEffect } from 'react';
 import { useChatContext } from '../contexts/ChatContext';
 import Sidebar from '../components/Sidebar';
@@ -10,7 +11,8 @@ const Home = () => {
     folders, 
     currentChatId, 
     messages, 
-    apiKey, 
+    apiKeys, 
+    selectedApiKey, 
     isLoading, 
     regeneratedResponses,
     clearContextTimestamp,
@@ -19,7 +21,8 @@ const Home = () => {
     models,
     modelConfig,
     initialSystemInstruction,
-    setApiKey,
+    setApiKeys,
+    setSelectedApiKey,
     baseUrlKey,
     setBaseUrlKey,
     handleSendMessage,
@@ -103,8 +106,10 @@ const Home = () => {
           }}
           onDeleteChat={handleDeleteChat}
           onRenameChat={handleRenameChat}
-          apiKey={apiKey}
-          setApiKey={setApiKey}
+          apiKeys={apiKeys}
+          setApiKeys={setApiKeys}
+          selectedApiKey={selectedApiKey}
+          setSelectedApiKey={setSelectedApiKey}
           baseUrlKey={baseUrlKey}
           setBaseUrlKey={setBaseUrlKey}
           isApiKeyVisible={isApiKeyVisible}

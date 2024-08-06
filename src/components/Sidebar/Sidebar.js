@@ -1,3 +1,4 @@
+// Sidebar/Sidebar.js
 import React, { useState, useEffect } from 'react';
 import Button from '../common/Button';
 import Modal from '../common/Modal';
@@ -15,8 +16,10 @@ const Sidebar = ({
   onSelectChat,
   onDeleteChat,
   onRenameChat,
-  apiKey,
-  setApiKey,
+  apiKeys,
+  setApiKeys,
+  selectedApiKey,
+  setSelectedApiKey,
   baseUrlKey,
   setBaseUrlKey,
   models,
@@ -190,8 +193,10 @@ const Sidebar = ({
             models={models}  
             selectedModel={selectedModel}
             onModelChange={onModelChange}
-            apiKey={apiKey}
-            setApiKey={setApiKey}
+            apiKeys={apiKeys}
+            setApiKeys={setApiKeys}
+            selectedApiKey={selectedApiKey}
+            setSelectedApiKey={setSelectedApiKey}
             baseUrlKey={baseUrlKey}
             setBaseUrlKey={setBaseUrlKey}
             initialSystemInstruction={initialSystemInstruction}
@@ -212,7 +217,7 @@ const Sidebar = ({
           <span>API Usage</span>
           {isApiUsageVisible ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </button>
-        {isApiUsageVisible && <ApiUsage apiKey={apiKey} baseUrlKey={baseUrlKey} />}
+        {isApiUsageVisible && <ApiUsage selectedApiKey={selectedApiKey} baseUrlKey={baseUrlKey} />}
       </div>
       <div className="mt-4 space-y-2">
         <Button onClick={handleExport} className="w-full text-sm py-2 flex items-center justify-center">
