@@ -1,27 +1,26 @@
-// src/components/ApiUsage/ApiUsage.js
 import React, { useEffect, useState } from 'react';
 import { fetchApiUsage } from '../../services/api';
 
-const ApiUsage = ({ apiKey }) => {
+const ApiUsage = ({ selectedApiKey, baseUrlKey }) => {
   const [usage, setUsage] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const getUsageData = async () => {
       try {
-        const data = await fetchApiUsage(apiKey);
+        const data = await fetchApiUsage(selectedApiKey, baseUrlKey);
         setUsage(data);
       } catch (error) {
         setError(error.message);
       }
     };
 
-    if (apiKey) {
+    if (selectedApiKey) {
       getUsageData();
     }
-  }, [apiKey]);
+  }, [selectedApiKey, baseUrlKey]);
 
-  if (!apiKey) {
+  if (!selectedApiKey) {
     return <p>Please enter your API key to see usage details.</p>;
   }
 
